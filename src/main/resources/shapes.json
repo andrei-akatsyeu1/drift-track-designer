@@ -1,0 +1,58 @@
+{
+  "shapes": [
+    {
+      "type": "annular_sector",
+      "key": "05",
+      "externalDiameter": 50.0,
+      "angleDegrees": 45.0,
+      "width": 6.0
+    },
+    {
+      "type": "annular_sector",
+      "key": "10",
+      "externalDiameter": 100.0,
+      "angleDegrees": 22.5,
+      "width": 6.0
+    },
+    {
+      "type": "annular_sector",
+      "key": "15",
+      "externalDiameter": 150.0,
+      "angleDegrees": 15.0,
+      "width": 6.0
+    },
+    {
+      "type": "annular_sector",
+      "key": "20",
+      "externalDiameter": 200.0,
+      "angleDegrees": 11.25,
+      "width": 6.0
+    },
+    {
+      "type": "annular_sector",
+      "key": "25",
+      "externalDiameter": 250.0,
+      "angleDegrees": 9.0,
+      "width": 6.0
+    },
+    {
+      "type": "annular_sector",
+      "key": "30",
+      "externalDiameter": 300.0,
+      "angleDegrees": 7.5,
+      "width": 6.0
+    },
+    {
+      "type": "rectangle",
+      "key": "L",
+      "length": 19.0,
+      "width": 6.0
+    },
+    {
+      "type": "rectangle",
+      "key": "L7",
+      "length": 7.0,
+      "width": 6.0
+    }
+  ]
+}
