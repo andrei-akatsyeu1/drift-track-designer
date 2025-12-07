@@ -22,6 +22,7 @@ public class ShapePalettePanel extends JPanel {
     private JPanel palettePanel2; // Palette for orientation = -1
     private ShapeConfig shapeConfig;
     private BiConsumer<String, Integer> shapeSelectionHandler; // Handler for shape selection (key, orientation)
+    private Runnable removeHandler; // Handler for remove button
     
     public ShapePalettePanel(ShapeConfig shapeConfig) {
         this.shapeConfig = shapeConfig;
@@ -42,9 +43,20 @@ public class ShapePalettePanel extends JPanel {
         palettesPanel.add(palettePanel1);
         palettesPanel.add(palettePanel2);
         
-        // Set preferred height to fit 2 rows of buttons
-        setPreferredSize(new Dimension(0, 80)); // Height for 2 rows of buttons
+        // Set preferred height to fit 2 rows of buttons plus some padding
+        setPreferredSize(new Dimension(0, 100)); // Height for 2 rows of buttons with padding
         add(palettesPanel, BorderLayout.CENTER);
+        
+        // Add Remove button at the bottom, wrapped in a FlowLayout panel to prevent full width
+        JPanel removeButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton removeButton = new JButton("Remove");
+        removeButton.addActionListener(e -> {
+            if (removeHandler != null) {
+                removeHandler.run();
+            }
+        });
+        removeButtonPanel.add(removeButton);
+        add(removeButtonPanel, BorderLayout.SOUTH);
     }
     
     /**
@@ -53,6 +65,14 @@ public class ShapePalettePanel extends JPanel {
      */
     public void setShapeSelectionHandler(BiConsumer<String, Integer> handler) {
         this.shapeSelectionHandler = handler;
+    }
+    
+    /**
+     * Sets the handler to be called when the Remove button is clicked.
+     * @param handler Handler to remove selected or last shape
+     */
+    public void setRemoveHandler(Runnable handler) {
+        this.removeHandler = handler;
     }
     
     /**

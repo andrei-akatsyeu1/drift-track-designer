@@ -107,9 +107,9 @@ public class AnnularSector extends ShapeInstance {
         java.awt.geom.Path2D.Double path = new java.awt.geom.Path2D.Double();
         
         // Calculate key points
-        double startOuterX = centerX + externalRadius;
+        double startOuterX = centerX + externalRadius * orientation;
         double startOuterY = centerY;
-        double endInnerX = centerX + internalRadius * Math.cos(angleRad);
+        double endInnerX = centerX + internalRadius * Math.cos(angleRad) * orientation;
         double endInnerY = centerY - internalRadius * Math.sin(angleRad);
         
         path.moveTo(startOuterX, startOuterY);
@@ -120,7 +120,7 @@ public class AnnularSector extends ShapeInstance {
         Arc2D.Double outerArc = new Arc2D.Double(
             centerX - externalRadius, centerY - externalRadius,
             externalRadius * 2, externalRadius * 2,
-            0, arcSweep,
+                (orientation == 1 ? 0 : 180), arcSweep * orientation,
             Arc2D.OPEN
         );
         path.append(outerArc, true);
@@ -129,7 +129,7 @@ public class AnnularSector extends ShapeInstance {
         Arc2D.Double innerArc = new Arc2D.Double(
             centerX - internalRadius, centerY - internalRadius,
             internalRadius * 2, internalRadius * 2,
-            arcSweep, -arcSweep,
+            orientation == 1 ? arcSweep : 180 - arcSweep, -arcSweep * orientation,
             Arc2D.OPEN
         );
         
@@ -158,6 +158,10 @@ public class AnnularSector extends ShapeInstance {
         }
         
         path.closePath();
+        
+        // Fill the shape with infill color, then draw outline with contour color
+        g2d.fill(path);
+        g2d.setColor(contourColor);
         g2d.draw(path);
     }
     
@@ -166,9 +170,9 @@ public class AnnularSector extends ShapeInstance {
         // Get actual shape center (calculated from alignPosition)
         double[] center = calculateCenterFromAlignPosition();
 
-        double secondSideAngle = alignPosition.getAngle() + angleDegrees; // Orientation removed from calculation
+        double secondSideAngle = alignPosition.getAngle() + angleDegrees * orientation; // Orientation removed from calculation
 
-        double[] nextAlignPosition = calculateAlignPositionFromCenter(center[0], center[1], secondSideAngle);
+        double[] nextAlignPosition = calculateAlignPositionFromCenter(center[0], center[1], secondSideAngle + (orientation == 1 ? 0 : 180));
 
         return new AlignPosition(nextAlignPosition[0], nextAlignPosition[1], secondSideAngle);
     }

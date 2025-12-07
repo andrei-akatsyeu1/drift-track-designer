@@ -90,6 +90,10 @@ public class Rectangle extends ShapeInstance {
         double y = centerY - scaledLength / 2;
         
         Rectangle2D.Double rectangle = new Rectangle2D.Double(x, y, scaledWidth, scaledLength);
+        
+        // Fill the shape with infill color, then draw outline with contour color
+        g2d.fill(rectangle);
+        g2d.setColor(contourColor);
         g2d.draw(rectangle);
     }
     

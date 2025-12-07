@@ -4,6 +4,7 @@ import com.trackdraw.config.ShapeConfig;
 import com.trackdraw.model.ShapeInstance;
 import com.trackdraw.model.AnnularSector;
 import com.trackdraw.model.Rectangle;
+import com.trackdraw.model.ShapeSequence;
 
 import javax.swing.*;
 import java.awt.*;
@@ -16,16 +17,14 @@ import java.util.List;
  */
 public class MainWindow extends JFrame {
     private DrawingPanel drawingPanel;
-    private FirstShapePositionPanel firstShapePositionPanel;
     private ScaleControlPanel scaleControlPanel;
     private ShapePalettePanel shapePalettePanel;
+    private ShapeSequencePanel shapeSequencePanel;
     private JList<String> shapeSequenceList;
     private DefaultListModel<String> shapeSequenceModel;
     private ShapeConfig shapeConfig;
-    private double rotationAngle = 0.0; // Rotation angle in degrees (for first shape only)
-    private double initialX = -1; // Initial X position (-1 means use center)
-    private double initialY = -1; // Initial Y position (-1 means use center)
-    private List<ShapeInstance> shapeSequence = new ArrayList<>();
+    private List<ShapeSequence> allSequences;
+    private ShapeSequence activeSequence;
     
     public MainWindow() {
         initializeComponents();
@@ -43,13 +42,29 @@ public class MainWindow extends JFrame {
         shapeConfig = new ShapeConfig();
         
         // Create UI component panels
-        firstShapePositionPanel = new FirstShapePositionPanel();
         scaleControlPanel = new ScaleControlPanel();
         shapePalettePanel = new ShapePalettePanel(shapeConfig);
+        shapeSequencePanel = new ShapeSequencePanel();
         
         shapeSequenceModel = new DefaultListModel<>();
         shapeSequenceList = new JList<>(shapeSequenceModel);
         shapeSequenceList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        
+        // Store the listener so we can temporarily disable it
+        javax.swing.event.ListSelectionListener shapeSelectionListener = e -> {
+            if (!e.getValueIsAdjusting()) {
+                onShapeSelectionChanged();
+            }
+        };
+        shapeSequenceList.addListSelectionListener(shapeSelectionListener);
+        
+        allSequences = new ArrayList<>();
+        
+        // Create default "Main" sequence
+        ShapeSequence mainSequence = new ShapeSequence("Main");
+        mainSequence.setActive(true);
+        allSequences.add(mainSequence);
+        activeSequence = mainSequence;
     }
     
     private void setupLayout() {
@@ -57,16 +72,20 @@ public class MainWindow extends JFrame {
         
         // Top panel with controls
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        topPanel.add(firstShapePositionPanel);
         topPanel.add(scaleControlPanel);
         
         add(topPanel, BorderLayout.NORTH);
         
-        // Create split pane: left side for sequence list, right side for drawing
+        // Create split pane: left side for sequence management and shape list, right side for drawing
         JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         
-        // Left side: sequence list
+        // Left side: sequence management panel and shape list
         JPanel leftPanel = new JPanel(new BorderLayout());
+        
+        // Top: ShapeSequence management panel
+        leftPanel.add(shapeSequencePanel, BorderLayout.NORTH);
+        
+        // Center: shape list for active sequence
         JPanel sequencePanel = new JPanel(new BorderLayout());
         sequencePanel.add(new JLabel("Shape Sequence:"), BorderLayout.NORTH);
         
@@ -83,7 +102,7 @@ public class MainWindow extends JFrame {
         
         splitPane.setLeftComponent(leftPanel);
         splitPane.setRightComponent(drawingPanel);
-        splitPane.setDividerLocation(250);
+        splitPane.setDividerLocation(300);
         splitPane.setResizeWeight(0.0); // Don't resize left panel
         
         // Center panel: palette above canvas
@@ -92,15 +111,6 @@ public class MainWindow extends JFrame {
         centerPanel.add(splitPane, BorderLayout.CENTER);
         
         add(centerPanel, BorderLayout.CENTER);
-        
-        // Setup click handler for canvas
-        drawingPanel.setClickHandler(point -> {
-            initialX = point.x;
-            initialY = point.y;
-            firstShapePositionPanel.setPosition(initialX, initialY);
-            drawingPanel.setInitialPosition(initialX, initialY);
-            drawAll();
-        });
         
         pack();
         setLocationRelativeTo(null);
@@ -118,11 +128,6 @@ public class MainWindow extends JFrame {
         });
         
         // Setup handlers for UI components
-        firstShapePositionPanel.setRotationChangeHandler(angle -> {
-            rotationAngle = angle;
-            drawAll();
-        });
-        
         scaleControlPanel.setScaleChangeHandler(scale -> {
             drawAll();
         });
@@ -130,6 +135,48 @@ public class MainWindow extends JFrame {
         shapePalettePanel.setShapeSelectionHandler((key, orientation) -> {
             addShapeToSequence(key, orientation);
         });
+        
+        // Set remove handler for the palette panel
+        shapePalettePanel.setRemoveHandler(() -> removeSelectedOrLastShape());
+        
+        // Setup handler for sequence panel
+        shapeSequencePanel.setSequenceChangeHandler(seq -> {
+            // Sync sequences from panel to MainWindow
+            allSequences = shapeSequencePanel.getSequences();
+            
+            // Store the previous active sequence's active shape before switching
+            // (The active shape state is already preserved in each shape's isActive() flag)
+            
+            activeSequence = seq;
+            
+            // Don't deactivate shapes - preserve active state for each sequence
+            // Just update the UI to reflect the current active sequence's active shape
+            
+            updateShapeList();
+            
+            // Select the active shape in the shape list if there is one
+            if (activeSequence != null) {
+                for (int i = 0; i < activeSequence.size(); i++) {
+                    ShapeInstance shape = activeSequence.getShape(i);
+                    if (shape != null && shape.isActive()) {
+                        shapeSequenceList.setSelectedIndex(i);
+                        break;
+                    }
+                }
+            }
+            
+            drawAll();
+        });
+        
+        // Setup suppliers so panel can access active sequence and all sequences
+        shapeSequencePanel.setSequenceSuppliers(
+            () -> activeSequence,
+            () -> allSequences
+        );
+        
+        // Initialize sequences list with default "Main" sequence
+        shapeSequencePanel.setSequences(allSequences);
+        updateShapeList();
     }
     
     private void loadShapes() {
@@ -148,7 +195,7 @@ public class MainWindow extends JFrame {
     }
     
     /**
-     * Adds a shape to the sequence following workflow:
+     * Adds a shape to the active sequence following workflow:
      * 3.1) Add new shape button pressed
      * 3.2) New object created and added to list (AlignPosition is null)
      * 3.3) canvas cleared
@@ -158,16 +205,16 @@ public class MainWindow extends JFrame {
      * 3.7) loop till the end of shape list
      */
     private void addShapeToSequence(String key, int orientation) {
-        ShapeInstance shapeTemplate = shapeConfig.getShape(key);
-        
-        if (shapeTemplate == null) {
-            JOptionPane.showMessageDialog(this, 
-                "Shape with key '" + key + "' not found.", 
-                "Shape Not Found", 
-                JOptionPane.ERROR_MESSAGE);
+        if (activeSequence == null) {
+            JOptionPane.showMessageDialog(this,
+                "No active sequence. Please create a sequence first.",
+                "No Active Sequence",
+                JOptionPane.WARNING_MESSAGE);
             return;
         }
         
+        ShapeInstance shapeTemplate = shapeConfig.getShape(key);
+
         // 3.2) New object created and added to list (AlignPosition is null)
         ShapeInstance newShapeInstance = createShapeInstance(shapeTemplate);
         
@@ -178,14 +225,142 @@ public class MainWindow extends JFrame {
             newShapeInstance.setOrientation(1); // Rectangles always have orientation = 1
         }
         
-        shapeSequence.add(newShapeInstance);
+        // Check if a shape is selected in the list
+        int selectedIndex = shapeSequenceList.getSelectedIndex();
+        int insertIndex;
+        if (selectedIndex >= 0 && selectedIndex < activeSequence.size()) {
+            // Insert after selected shape
+            insertIndex = selectedIndex + 1;
+        } else {
+            // Add at the end
+            insertIndex = activeSequence.size();
+        }
+        
+        // Insert the shape at the calculated index
+        // (insertShape handles color flag, deactivation, and activation)
+        activeSequence.insertShape(insertIndex, newShapeInstance);
         
         // Update list model
-        String displayKey = (orientation == -1 && newShapeInstance instanceof AnnularSector) ? "-" + key : key;
-        shapeSequenceModel.addElement(displayKey);
+        updateShapeList();
         
-        // 3.3-3.7) Draw all shapes
+        // Keep selection on the newly added shape
+        shapeSequenceList.setSelectedIndex(insertIndex);
+        
+        // Redraw (colors will be recalculated in drawAll)
         drawAll();
+    }
+    
+    /**
+     * Removes the selected shape from the active sequence, or the last one if none is selected.
+     */
+    private void removeSelectedOrLastShape() {
+        if (activeSequence == null || activeSequence.isEmpty()) {
+            return;
+        }
+        
+        int selectedIndex = shapeSequenceList.getSelectedIndex();
+        int removeIndex;
+        
+        if (selectedIndex >= 0 && selectedIndex < activeSequence.size()) {
+            // Remove selected shape
+            removeIndex = selectedIndex;
+        } else {
+            // Remove last shape if nothing is selected
+            removeIndex = activeSequence.size() - 1;
+        }
+        
+        // Deactivate the shape before removing
+        ShapeInstance shapeToRemove = activeSequence.getShape(removeIndex);
+        if (shapeToRemove != null) {
+            shapeToRemove.setActive(false);
+        }
+        
+        activeSequence.removeShape(removeIndex);
+        
+        updateShapeList();
+        
+        // Clear selection
+        shapeSequenceList.clearSelection();
+        
+        // Redraw (colors will be recalculated in drawAll)
+        drawAll();
+    }
+    
+    /**
+     * Called when shape selection changes in the list.
+     */
+    private void onShapeSelectionChanged() {
+        if (activeSequence == null) {
+            return;
+        }
+        
+        int selectedIndex = shapeSequenceList.getSelectedIndex();
+        
+        // Deactivate all shapes
+        for (ShapeInstance shape : activeSequence.getShapes()) {
+            shape.setActive(false);
+        }
+        
+        // Activate selected shape
+        if (selectedIndex >= 0 && selectedIndex < activeSequence.size()) {
+            ShapeInstance selectedShape = activeSequence.getShape(selectedIndex);
+            if (selectedShape != null) {
+                selectedShape.setActive(true);
+            }
+        }
+        
+        // Update list display (without triggering selection events)
+        updateShapeList();
+        
+        // Ensure the active shape is selected in the list
+        if (selectedIndex >= 0 && selectedIndex < shapeSequenceModel.getSize()) {
+            shapeSequenceList.setSelectedIndex(selectedIndex);
+        }
+        
+        // Redraw to update colors (colors will be recalculated in drawAll)
+        drawAll();
+    }
+    
+    /**
+     * Updates the shape list model to reflect the active sequence.
+     * Temporarily disables selection listener to prevent circular calls.
+     */
+    private void updateShapeList() {
+        // Temporarily disable selection listener to prevent circular calls
+        javax.swing.event.ListSelectionListener[] listeners = shapeSequenceList.getListSelectionListeners();
+        for (javax.swing.event.ListSelectionListener listener : listeners) {
+            shapeSequenceList.removeListSelectionListener(listener);
+        }
+        
+        try {
+            shapeSequenceModel.clear();
+            
+            int activeShapeIndex = -1;
+            if (activeSequence != null) {
+                for (int i = 0; i < activeSequence.size(); i++) {
+                    ShapeInstance shape = activeSequence.getShape(i);
+                    String displayKey = shape.getKey();
+                    if (shape instanceof AnnularSector && shape.getOrientation() == -1) {
+                        displayKey = "-" + displayKey;
+                    }
+                    if (shape.isActive()) {
+                        displayKey += " (active)";
+                        activeShapeIndex = i; // Remember the active shape index
+                    }
+                    shapeSequenceModel.addElement(displayKey);
+                }
+            }
+            
+            // Select the active shape if there is one
+            if (activeShapeIndex >= 0 && activeShapeIndex < shapeSequenceModel.getSize()) {
+                shapeSequenceList.setSelectedIndex(activeShapeIndex);
+            }
+        } finally {
+            // Re-enable selection listeners
+            for (javax.swing.event.ListSelectionListener listener : listeners) {
+                shapeSequenceList.addListSelectionListener(listener);
+            }
+        }
     }
     
     /**
@@ -204,36 +379,62 @@ public class MainWindow extends JFrame {
     }
     
     /**
-     * Clears the shape sequence.
+     * Clears the active shape sequence.
      */
     private void clearSequence() {
-        shapeSequence.clear();
-        shapeSequenceModel.clear();
-        drawAll();
+        if (activeSequence != null) {
+            activeSequence.clear();
+            updateShapeList();
+            drawAll();
+        }
+    }
+    
+    /**
+     * Updates the sequence panel with current sequences.
+     */
+    private void updateSequencePanel() {
+        shapeSequencePanel.setSequences(allSequences);
+    }
+    
+    /**
+     * Recalculates colors for all sequences.
+     * Processes sequences in order - since sequences can only depend on sequences above them,
+     * we can safely recalculate them in list order without additional dependency checks.
+     */
+    private void recalculateAllColors() {
+        // Sync sequences from panel to MainWindow
+        allSequences = shapeSequencePanel.getSequences();
+        
+        // Process sequences in order - each sequence can only depend on sequences above it
+        // The linked shape's color is already calculated because it's from a sequence processed earlier
+        for (ShapeSequence sequence : allSequences) {
+            sequence.recalculateColors();
+        }
     }
     
     /**
      * Draws all shapes following workflow:
      * 3.3) canvas cleared
      * 3.4) start draw all shapes from the list by sequence
-     * 3.5) for first shape set default AlignPosition (center of canvas or initialX/Y, angle from rotation field)
+     * 3.5) for first shape set default AlignPosition (center of canvas, angle 0)
      * 3.6) draw first shape, set returned AlignPosition to next shape
      * 3.7) loop till the end of shape list
      */
     private void drawAll() {
-        // Get rotation angle from panel
-        rotationAngle = firstShapePositionPanel.getRotationAngle();
+        // Sync sequences from panel to MainWindow
+        allSequences = shapeSequencePanel.getSequences();
+        activeSequence = shapeSequencePanel.getActiveSequence();
         
-        // Set initial rotation angle for first shape
-        drawingPanel.setInitialRotationAngle(rotationAngle);
+        // Recalculate colors before drawing
+        recalculateAllColors();
         
-        // Set initial position
-        drawingPanel.setInitialPosition(initialX, initialY);
+        // Update shape list for active sequence
+        updateShapeList();
         
-        // Update drawing panel with current sequence
-        drawingPanel.setShapeSequence(shapeSequence);
+        // Update drawing panel with all sequences
+        drawingPanel.setSequences(allSequences);
         
-        // Trigger repaint (which will call drawAll internally)
+        // Trigger repaint
         drawingPanel.drawAll();
     }
     

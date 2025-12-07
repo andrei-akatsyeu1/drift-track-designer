@@ -15,12 +15,16 @@ public abstract class ShapeInstance {
     protected Color contourColor;
     protected Color infillColor;
     protected int orientation; // 1 or -1 for AnnularSector (convenient for math operations), always 1 for Rectangle
+    protected boolean active; // Whether this shape is active
+    protected boolean isRed; // Color flag: true = red, false = white (default)
     
     public ShapeInstance() {
         this.id = UUID.randomUUID();
         this.contourColor = Color.BLACK;
         this.infillColor = Color.WHITE;
         this.orientation = 1; // Default orientation
+        this.active = false; // Default to not active
+        this.isRed = false; // Default to white
     }
     
     public UUID getId() {
@@ -67,6 +71,22 @@ public abstract class ShapeInstance {
         this.orientation = orientation;
     }
     
+    public boolean isActive() {
+        return active;
+    }
+    
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+    
+    public boolean isRed() {
+        return isRed;
+    }
+    
+    public void setRed(boolean isRed) {
+        this.isRed = isRed;
+    }
+    
     /**
      * Gets the unique key/identifier for this shape.
      * @return shape key
@@ -103,8 +123,8 @@ public abstract class ShapeInstance {
         g2d.rotate(Math.toRadians(-rotationAngle));
         g2d.translate(-centerX, -centerY);
 
-        // Set colors
-        g2d.setColor(contourColor);
+        // Set infill color (will be used for filling)
+        g2d.setColor(infillColor);
         
         return originalTransform;
     }
@@ -119,7 +139,7 @@ public abstract class ShapeInstance {
     protected double[] calculateCenterFromAlignPosition() {
         //calculation hack: the diff between method is what we need to substract offset instead of adding.
         // Adding 180 to angle change sign of sin and cos, what change sign of offset
-        return calculateAlignPositionFromCenter(alignPosition.getX(), alignPosition.getY(), alignPosition.getAngle() + 180);
+        return calculateAlignPositionFromCenter(alignPosition.getX(), alignPosition.getY(), alignPosition.getAngle() + (orientation == 1 ? 180 : 0));
     }
     
     /**
