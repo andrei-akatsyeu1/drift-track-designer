@@ -28,18 +28,32 @@ public class ScaleControlPanel extends JPanel {
         scaleField.setEditable(false);
     }
     
+    /**
+     * Sets a larger font for a button.
+     * @param button Button to set font for
+     */
+    private void setButtonFont(JButton button) {
+        Font currentFont = button.getFont();
+        Font largerFont = new Font(currentFont.getName(), currentFont.getStyle(), currentFont.getSize() + 4);
+        button.setFont(largerFont);
+    }
+    
     private void setupLayout() {
         setLayout(new FlowLayout(FlowLayout.CENTER));
         
         // Scale controls
         add(new JLabel("  Scale:"));
         JButton scaleMinusButton = new JButton("-");
+        setButtonFont(scaleMinusButton);
+        scaleMinusButton.setToolTipText("Decrease scale by 10%");
         scaleMinusButton.addActionListener(e -> changeScale(-0.1));
         add(scaleMinusButton);
         
         add(scaleField);
         
         JButton scalePlusButton = new JButton("+");
+        setButtonFont(scalePlusButton);
+        scalePlusButton.setToolTipText("Increase scale by 10%");
         scalePlusButton.addActionListener(e -> changeScale(0.1));
         add(scalePlusButton);
     }

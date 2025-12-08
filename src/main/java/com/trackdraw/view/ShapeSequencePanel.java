@@ -20,6 +20,7 @@ public class ShapeSequencePanel extends JPanel {
     private JButton addButton;
     private JButton addFromShapeButton;
     private JButton deleteButton;
+    private JButton invertAlignmentButton;
     private JList<String> sequenceList;
     private DefaultListModel<String> sequenceModel;
     
@@ -34,18 +35,39 @@ public class ShapeSequencePanel extends JPanel {
         setupLayout();
     }
     
+    /**
+     * Sets a larger font for a button.
+     * @param button Button to set font for
+     */
+    private void setButtonFont(JButton button) {
+        Font currentFont = button.getFont();
+        Font largerFont = new Font(currentFont.getName(), currentFont.getStyle(), currentFont.getSize() + 4);
+        button.setFont(largerFont);
+    }
+    
     private void initializeComponents() {
         newSeqField = new JTextField(15);
         newSeqField.setToolTipText("Name for new sequence");
         
-        addButton = new JButton("Add");
+        addButton = new JButton("✚");
+        setButtonFont(addButton);
+        addButton.setToolTipText("Add new sequence");
         addButton.addActionListener(e -> addNewSequence());
         
-        addFromShapeButton = new JButton("Add from shape");
+        addFromShapeButton = new JButton("✚🔗");
+        setButtonFont(addFromShapeButton);
+        addFromShapeButton.setToolTipText("Add new sequence from active shape");
         addFromShapeButton.addActionListener(e -> addSequenceFromShape());
         
-        deleteButton = new JButton("Delete");
+        deleteButton = new JButton("🗑");
+        setButtonFont(deleteButton);
+        deleteButton.setToolTipText("Delete active sequence");
         deleteButton.addActionListener(e -> deleteSelectedSequence());
+        
+        invertAlignmentButton = new JButton("↻"); // Unicode rotate symbol
+        setButtonFont(invertAlignmentButton);
+        invertAlignmentButton.setToolTipText("Invert alignment (only for sequences linked to shapes)");
+        invertAlignmentButton.addActionListener(e -> toggleInvertAlignment());
         
         sequenceModel = new DefaultListModel<>();
         sequenceList = new JList<>(sequenceModel);
@@ -70,6 +92,7 @@ public class ShapeSequencePanel extends JPanel {
         buttonsPanel.add(addButton);
         buttonsPanel.add(addFromShapeButton);
         buttonsPanel.add(deleteButton);
+        buttonsPanel.add(invertAlignmentButton);
         
         // Combine text field and buttons panels
         JPanel topPanel = new JPanel(new BorderLayout());
@@ -100,6 +123,12 @@ public class ShapeSequencePanel extends JPanel {
                 sequenceList.setSelectedIndex(index);
             }
         }
+        
+        // Pre-fill next sequence default name
+        newSeqField.setText("Sequence " + (this.sequences.size() + 1));
+        
+        // Update invert button state
+        updateInvertButtonState();
     }
     
     /**
@@ -280,7 +309,11 @@ public class ShapeSequencePanel extends JPanel {
             sequenceList.setSelectedIndex(newSeqIndex);
         }
         
-        newSeqField.setText("");
+        // Pre-fill next sequence default name
+        newSeqField.setText("Sequence " + (sequences.size() + 1));
+        
+        // Update invert button state
+        updateInvertButtonState();
         
         // Notify handler to sync with MainWindow
         if (sequenceChangeHandler != null) {
@@ -369,6 +402,9 @@ public class ShapeSequencePanel extends JPanel {
             sequenceList.setSelectedIndex(0);
         }
         
+        // Update invert button state
+        updateInvertButtonState();
+        
         // Notify handler to sync with MainWindow (this will update MainWindow's allSequences)
         if (sequenceChangeHandler != null) {
             sequenceChangeHandler.accept(newActiveSeq);
@@ -397,6 +433,56 @@ public class ShapeSequencePanel extends JPanel {
         int index = sequences.indexOf(sequence);
         if (index >= 0) {
             sequenceList.setSelectedIndex(index);
+        }
+    }
+    
+    /**
+     * Toggles the invertAlignment flag for the active sequence.
+     * Only works if the sequence is linked to a shape (not a position).
+     */
+    private void toggleInvertAlignment() {
+        ShapeSequence activeSeq = getActiveSequence();
+        if (activeSeq == null) {
+            return;
+        }
+        
+        // Only allow inversion if linked to a shape (not a position)
+        if (activeSeq.getInitialAlignmentAsShape() == null) {
+            // Do nothing if not linked to a shape
+            return;
+        }
+        
+        // Toggle the invertAlignment flag
+        activeSeq.setInvertAlignment(!activeSeq.isInvertAlignment());
+        
+        // Update button appearance to show state
+        updateInvertButtonState();
+        
+        // Notify handler to trigger redraw
+        if (sequenceChangeHandler != null) {
+            sequenceChangeHandler.accept(activeSeq);
+        }
+    }
+    
+    /**
+     * Updates the invert alignment button state based on active sequence.
+     */
+    private void updateInvertButtonState() {
+        ShapeSequence activeSeq = getActiveSequence();
+        if (activeSeq != null && activeSeq.getInitialAlignmentAsShape() != null) {
+            // Enable button and show state
+            invertAlignmentButton.setEnabled(true);
+            if (activeSeq.isInvertAlignment()) {
+                invertAlignmentButton.setText("↻"); // Show inverted state (could use different symbol)
+                invertAlignmentButton.setToolTipText("Invert alignment: ON (click to turn off)");
+            } else {
+                invertAlignmentButton.setText("↻");
+                invertAlignmentButton.setToolTipText("Invert alignment: OFF (click to turn on)");
+            }
+        } else {
+            // Disable button if not linked to shape
+            invertAlignmentButton.setEnabled(false);
+            invertAlignmentButton.setToolTipText("Invert alignment (only for sequences linked to shapes)");
         }
     }
     
@@ -438,6 +524,9 @@ public class ShapeSequencePanel extends JPanel {
             if (sequenceChangeHandler != null) {
                 sequenceChangeHandler.accept(selectedSeq);
             }
+            
+            // Update invert button state
+            updateInvertButtonState();
         }
     }
 }

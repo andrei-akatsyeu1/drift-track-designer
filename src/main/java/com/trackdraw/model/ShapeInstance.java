@@ -17,6 +17,7 @@ public abstract class ShapeInstance {
     protected int orientation; // 1 or -1 for AnnularSector (convenient for math operations), always 1 for Rectangle
     protected boolean active; // Whether this shape is active
     protected boolean isRed; // Color flag: true = red, false = white (default)
+    protected boolean forceInvertColor; // Force invert color flag: if true, invert the color from isRed
     
     public ShapeInstance() {
         this.id = UUID.randomUUID();
@@ -25,6 +26,7 @@ public abstract class ShapeInstance {
         this.orientation = 1; // Default orientation
         this.active = false; // Default to not active
         this.isRed = false; // Default to white
+        this.forceInvertColor = false; // Default to no inversion
     }
     
     public UUID getId() {
@@ -85,6 +87,23 @@ public abstract class ShapeInstance {
     
     public void setRed(boolean isRed) {
         this.isRed = isRed;
+    }
+    
+    public boolean isForceInvertColor() {
+        return forceInvertColor;
+    }
+    
+    public void setForceInvertColor(boolean forceInvertColor) {
+        this.forceInvertColor = forceInvertColor;
+    }
+    
+    /**
+     * Gets the effective color flag, taking into account forceInvertColor.
+     * This is the color that should be used for calculating next shape's color.
+     * @return true if the effective color is red, false if white
+     */
+    public boolean getEffectiveIsRed() {
+        return forceInvertColor ? !isRed : isRed;
     }
     
     /**

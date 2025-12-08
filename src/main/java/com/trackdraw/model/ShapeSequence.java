@@ -15,12 +15,14 @@ public class ShapeSequence {
     private List<ShapeInstance> shapes;
     private Object initialAlignment; // Can be AlignPosition or ShapeInstance
     private boolean active; // Whether this sequence is active
+    private boolean invertAlignment; // Whether to invert alignment (default false)
     
     public ShapeSequence() {
         this.name = "";
         this.shapes = new ArrayList<>();
         this.initialAlignment = null;
         this.active = true; // Default to active
+        this.invertAlignment = false; // Default to no inversion
     }
     
     public ShapeSequence(String name) {
@@ -28,6 +30,7 @@ public class ShapeSequence {
         this.shapes = new ArrayList<>();
         this.initialAlignment = null;
         this.active = true; // Default to active
+        this.invertAlignment = false; // Default to no inversion
     }
     
     public ShapeSequence(List<ShapeInstance> shapes) {
@@ -35,6 +38,7 @@ public class ShapeSequence {
         this.shapes = shapes != null ? new ArrayList<>(shapes) : new ArrayList<>();
         this.initialAlignment = null;
         this.active = true; // Default to active
+        this.invertAlignment = false; // Default to no inversion
     }
     
     public String getName() {
@@ -149,6 +153,14 @@ public class ShapeSequence {
         this.active = active;
     }
     
+    public boolean isInvertAlignment() {
+        return invertAlignment;
+    }
+    
+    public void setInvertAlignment(boolean invertAlignment) {
+        this.invertAlignment = invertAlignment;
+    }
+    
     /**
      * Sets the initial alignment position as an AlignPosition.
      * @param alignPosition AlignPosition for the first shape
@@ -192,21 +204,35 @@ public class ShapeSequence {
      * Gets the effective initial alignment position.
      * If set as AlignPosition, returns it directly.
      * If set as ShapeInstance, returns its align position.
+     * If invertAlignment is true and linked to a shape, inverts the angle by 180 degrees.
      * @return AlignPosition for the first shape, or null if not set
      */
     public AlignPosition getEffectiveInitialAlignment() {
+        AlignPosition alignPos = null;
+        
         if (initialAlignment instanceof AlignPosition) {
-            return (AlignPosition) initialAlignment;
+            alignPos = (AlignPosition) initialAlignment;
         } else if (initialAlignment instanceof ShapeInstance) {
-            return ((ShapeInstance) initialAlignment).calculateNextAlignPosition();
+            alignPos = ((ShapeInstance) initialAlignment).calculateNextAlignPosition();
+            
+            // If invertAlignment is true, invert the angle by 180 degrees
+            if (invertAlignment && alignPos != null) {
+                double invertedAngle = alignPos.getAngle() + 180.0;
+                // Normalize angle to 0-360 range
+                while (invertedAngle < 0) invertedAngle += 360;
+                while (invertedAngle >= 360) invertedAngle -= 360;
+                alignPos = new AlignPosition(alignPos.getX(), alignPos.getY(), invertedAngle);
+            }
         }
-        return null;
+        
+        return alignPos;
     }
     
     /**
      * Recalculates color flags (isRed) for all shapes in this sequence.
      * If this sequence is linked to another shape, starts from opposite color of linked shape.
      * Otherwise, starts from white (false) and alternates.
+     * Each shape's color is calculated based on the previous shape's effective color (after inversion).
      */
     public void recalculateColors() {
         if (shapes.isEmpty()) {
@@ -216,23 +242,27 @@ public class ShapeSequence {
         // Get the linked shape if this sequence is linked to another shape
         ShapeInstance linkedShape = getInitialAlignmentAsShape();
         
+        // Determine starting color based on linked shape or default
+        boolean previousEffectiveRed;
         if (linkedShape != null) {
-            // Sequence with link: start from opposite color of linked shape
-            boolean startRed = !linkedShape.isRed();
-            for (int i = 0; i < shapes.size(); i++) {
-                ShapeInstance shape = shapes.get(i);
-                if (shape != null) {
-                    // Alternate starting from startRed
-                    shape.setRed((i % 2 == 0) ? startRed : !startRed);
-                }
-            }
+            // Sequence with link: start from opposite color of linked shape's effective color
+            previousEffectiveRed = !linkedShape.getEffectiveIsRed();
         } else {
-            // Sequence without link: alternate starting from white (false)
-            for (int i = 0; i < shapes.size(); i++) {
-                ShapeInstance shape = shapes.get(i);
-                if (shape != null) {
-                    shape.setRed(i % 2 == 1); // Even indices (0, 2, 4...) = white, odd (1, 3, 5...) = red
-                }
+            // Sequence without link: start from white (false)
+            previousEffectiveRed = false;
+        }
+        
+        // Calculate each shape's color based on the previous shape's effective color
+        for (int i = 0; i < shapes.size(); i++) {
+            ShapeInstance shape = shapes.get(i);
+            if (shape != null) {
+                // Calculate base color: alternate from previous effective color
+                boolean baseRed = !previousEffectiveRed;
+                shape.setRed(baseRed);
+                
+                // Update previous effective color for next iteration
+                // Note: forceInvertColor is preserved, so the effective color will be inverted if needed
+                previousEffectiveRed = shape.getEffectiveIsRed();
             }
         }
     }
@@ -247,7 +277,8 @@ public class ShapeSequence {
      * @return Array with [contourColor, infillColor]
      */
     private Color[] calculateColors(ShapeInstance shape) {
-        boolean isRed = shape.isRed();
+        // Use effective color (after inversion) for display
+        boolean isRed = shape.getEffectiveIsRed();
         boolean seqActive = this.active;
         boolean shapeActive = shape.isActive();
         

@@ -50,6 +50,18 @@
     },
     {
       "type": "rectangle",
+      "key": "L3",
+      "length": 3.0,
+      "width": 6.0
+    },
+    {
+      "type": "rectangle",
+      "key": "L5",
+      "length": 5.0,
+      "width": 6.0
+    },
+    {
+      "type": "rectangle",
       "key": "L7",
       "length": 7.0,
       "width": 6.0

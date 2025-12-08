@@ -1,10 +1,9 @@
 package com.trackdraw.view;
 
+import com.trackdraw.config.SequenceManager;
 import com.trackdraw.config.ShapeConfig;
-import com.trackdraw.model.ShapeInstance;
-import com.trackdraw.model.AnnularSector;
-import com.trackdraw.model.Rectangle;
 import com.trackdraw.model.ShapeSequence;
+import com.trackdraw.report.ShapeReportGenerator;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,16 +12,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Main application window with drawing panel and shape input field.
+ * Main application window - orchestrates UI layout and delegates to controllers.
  */
 public class MainWindow extends JFrame {
+    // UI Components
     private DrawingPanel drawingPanel;
     private ScaleControlPanel scaleControlPanel;
     private ShapePalettePanel shapePalettePanel;
     private ShapeSequencePanel shapeSequencePanel;
-    private JList<String> shapeSequenceList;
-    private DefaultListModel<String> shapeSequenceModel;
+    private ShapeListPanel shapeListPanel;
+    
+    // Controllers
     private ShapeConfig shapeConfig;
+    private SequenceManager sequenceManager;
+    private ShapeSequenceController sequenceController;
+    private DrawingCoordinator drawingCoordinator;
+    private AlignmentKeyboardController keyboardController;
+    
+    // State
     private List<ShapeSequence> allSequences;
     private ShapeSequence activeSequence;
     
@@ -38,26 +45,21 @@ public class MainWindow extends JFrame {
         setTitle("Track Draw - Shape Drawing Application");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
+        // Initialize UI components
         drawingPanel = new DrawingPanel();
         shapeConfig = new ShapeConfig();
-        
-        // Create UI component panels
+        sequenceManager = new SequenceManager();
         scaleControlPanel = new ScaleControlPanel();
         shapePalettePanel = new ShapePalettePanel(shapeConfig);
         shapeSequencePanel = new ShapeSequencePanel();
+        shapeListPanel = new ShapeListPanel();
         
-        shapeSequenceModel = new DefaultListModel<>();
-        shapeSequenceList = new JList<>(shapeSequenceModel);
-        shapeSequenceList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        // Initialize controllers
+        drawingCoordinator = new DrawingCoordinator(drawingPanel, shapeSequencePanel, shapeListPanel);
+        sequenceController = new ShapeSequenceController(shapeConfig, shapeListPanel, drawingCoordinator);
+        keyboardController = new AlignmentKeyboardController(drawingPanel, shapeSequencePanel, drawingCoordinator);
         
-        // Store the listener so we can temporarily disable it
-        javax.swing.event.ListSelectionListener shapeSelectionListener = e -> {
-            if (!e.getValueIsAdjusting()) {
-                onShapeSelectionChanged();
-            }
-        };
-        shapeSequenceList.addListSelectionListener(shapeSelectionListener);
-        
+        // Initialize state
         allSequences = new ArrayList<>();
         
         // Create default "Main" sequence
@@ -73,7 +75,6 @@ public class MainWindow extends JFrame {
         // Top panel with controls
         JPanel topPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         topPanel.add(scaleControlPanel);
-        
         add(topPanel, BorderLayout.NORTH);
         
         // Create split pane: left side for sequence management and shape list, right side for drawing
@@ -85,19 +86,19 @@ public class MainWindow extends JFrame {
         // Top: ShapeSequence management panel
         leftPanel.add(shapeSequencePanel, BorderLayout.NORTH);
         
-        // Center: shape list for active sequence
+        // Center: shape list panel with clear button
         JPanel sequencePanel = new JPanel(new BorderLayout());
-        sequencePanel.add(new JLabel("Shape Sequence:"), BorderLayout.NORTH);
         
         // Clear button
-        JButton clearButton = new JButton("Clear");
-        clearButton.addActionListener(e -> clearSequence());
+        JButton clearButton = new JButton("⌧");
+        Font currentFont = clearButton.getFont();
+        Font largerFont = new Font(currentFont.getName(), currentFont.getStyle(), currentFont.getSize() + 4);
+        clearButton.setFont(largerFont);
+        clearButton.setToolTipText("Clear active sequence");
+        clearButton.addActionListener(e -> sequenceController.clearSequence());
         sequencePanel.add(clearButton, BorderLayout.SOUTH);
         
-        JScrollPane listScrollPane = new JScrollPane(shapeSequenceList);
-        listScrollPane.setPreferredSize(new Dimension(250, 0));
-        sequencePanel.add(listScrollPane, BorderLayout.CENTER);
-        
+        sequencePanel.add(shapeListPanel, BorderLayout.CENTER);
         leftPanel.add(sequencePanel, BorderLayout.CENTER);
         
         splitPane.setLeftComponent(leftPanel);
@@ -121,51 +122,45 @@ public class MainWindow extends JFrame {
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-                // Note: shapes.json is managed manually, not saved by the application
-                // Other data (drawing results) will be saved to a different file later
                 System.exit(0);
             }
         });
         
         // Setup handlers for UI components
         scaleControlPanel.setScaleChangeHandler(scale -> {
-            drawAll();
+            drawingCoordinator.drawAll();
         });
         
         shapePalettePanel.setShapeSelectionHandler((key, orientation) -> {
-            addShapeToSequence(key, orientation);
+            sequenceController.addShapeToSequence(key, orientation);
         });
         
         // Set remove handler for the palette panel
-        shapePalettePanel.setRemoveHandler(() -> removeSelectedOrLastShape());
+        shapePalettePanel.setRemoveHandler(() -> sequenceController.removeSelectedOrLastShape());
+        
+        // Set invert color handler for the palette panel
+        shapePalettePanel.setInvertColorHandler(() -> sequenceController.toggleInvertColor());
         
         // Setup handler for sequence panel
         shapeSequencePanel.setSequenceChangeHandler(seq -> {
             // Sync sequences from panel to MainWindow
             allSequences = shapeSequencePanel.getSequences();
-            
-            // Store the previous active sequence's active shape before switching
-            // (The active shape state is already preserved in each shape's isActive() flag)
-            
             activeSequence = seq;
             
-            // Don't deactivate shapes - preserve active state for each sequence
-            // Just update the UI to reflect the current active sequence's active shape
-            
-            updateShapeList();
+            // Update sequence controller
+            sequenceController.setActiveSequence(activeSequence);
             
             // Select the active shape in the shape list if there is one
             if (activeSequence != null) {
                 for (int i = 0; i < activeSequence.size(); i++) {
-                    ShapeInstance shape = activeSequence.getShape(i);
-                    if (shape != null && shape.isActive()) {
-                        shapeSequenceList.setSelectedIndex(i);
+                    if (activeSequence.getShape(i) != null && activeSequence.getShape(i).isActive()) {
+                        shapeListPanel.setSelectedIndex(i);
                         break;
                     }
                 }
             }
             
-            drawAll();
+            drawingCoordinator.drawAll();
         });
         
         // Setup suppliers so panel can access active sequence and all sequences
@@ -176,7 +171,174 @@ public class MainWindow extends JFrame {
         
         // Initialize sequences list with default "Main" sequence
         shapeSequencePanel.setSequences(allSequences);
-        updateShapeList();
+        sequenceController.setActiveSequence(activeSequence);
+        
+        // Setup keyboard controls for adjusting alignment position
+        keyboardController.setupKeyboardControls();
+        
+        // Setup shape list selection listener
+        shapeListPanel.addSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                sequenceController.onShapeSelectionChanged();
+            }
+        });
+        
+        // Add menu bar with report option
+        setupMenuBar();
+    }
+    
+    /**
+     * Sets up the menu bar with report and file options.
+     */
+    private void setupMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+        
+        // File menu
+        JMenu fileMenu = new JMenu("File");
+        
+        JMenuItem loadItem = new JMenuItem("Load Sequences...");
+        loadItem.addActionListener(e -> loadSequences());
+        fileMenu.add(loadItem);
+        
+        JMenuItem saveItem = new JMenuItem("Save Sequences...");
+        saveItem.addActionListener(e -> saveSequences());
+        fileMenu.add(saveItem);
+        
+        fileMenu.addSeparator();
+        
+        JMenuItem exitItem = new JMenuItem("Exit");
+        exitItem.addActionListener(e -> System.exit(0));
+        fileMenu.add(exitItem);
+        
+        menuBar.add(fileMenu);
+        
+        // Report menu
+        JMenu reportMenu = new JMenu("Report");
+        JMenuItem generateReportItem = new JMenuItem("Generate Shape Report");
+        generateReportItem.addActionListener(e -> showShapeReport());
+        reportMenu.add(generateReportItem);
+        
+        menuBar.add(reportMenu);
+        setJMenuBar(menuBar);
+    }
+    
+    /**
+     * Loads sequences from a file.
+     */
+    private void loadSequences() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Load Sequences");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("JSON Files", "json"));
+        
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            try {
+                List<ShapeSequence> loadedSequences = sequenceManager.loadSequences(fileChooser.getSelectedFile().getAbsolutePath());
+                
+                if (loadedSequences.isEmpty()) {
+                    JOptionPane.showMessageDialog(this,
+                        "No sequences found in file.",
+                        "Load Sequences",
+                        JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+                
+                // Replace current sequences
+                allSequences = loadedSequences;
+                shapeSequencePanel.setSequences(allSequences);
+                
+                // Set first sequence as active if available
+                if (!allSequences.isEmpty()) {
+                    ShapeSequence firstSeq = allSequences.get(0);
+                    firstSeq.setActive(true);
+                    for (int i = 1; i < allSequences.size(); i++) {
+                        allSequences.get(i).setActive(false);
+                    }
+                    activeSequence = firstSeq;
+                    sequenceController.setActiveSequence(activeSequence);
+                }
+                
+                drawingCoordinator.drawAll();
+                
+                JOptionPane.showMessageDialog(this,
+                    String.format("Loaded %d sequence(s) successfully.", loadedSequences.size()),
+                    "Load Sequences",
+                    JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(this,
+                    "Error loading sequences: " + e.getMessage(),
+                    "Load Error",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    
+    /**
+     * Saves sequences to a file.
+     */
+    private void saveSequences() {
+        // Sync sequences from panel
+        allSequences = shapeSequencePanel.getSequences();
+        
+        if (allSequences.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                "No sequences to save.",
+                "Save Sequences",
+                JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Save Sequences");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("JSON Files", "json"));
+        fileChooser.setSelectedFile(new java.io.File("sequences.json"));
+        
+        int result = fileChooser.showSaveDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            try {
+                String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+                if (!filePath.toLowerCase().endsWith(".json")) {
+                    filePath += ".json";
+                }
+                
+                sequenceManager.saveSequences(allSequences, filePath);
+                
+                JOptionPane.showMessageDialog(this,
+                    String.format("Saved %d sequence(s) successfully.", allSequences.size()),
+                    "Save Sequences",
+                    JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException e) {
+                JOptionPane.showMessageDialog(this,
+                    "Error saving sequences: " + e.getMessage(),
+                    "Save Error",
+                    JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+    
+    /**
+     * Generates and displays the shape usage report.
+     */
+    private void showShapeReport() {
+        // Get all sequences
+        List<ShapeSequence> allSequences = shapeSequencePanel.getSequences();
+        
+        // Generate report
+        ShapeReportGenerator generator = new ShapeReportGenerator();
+        ShapeReportGenerator.Report report = generator.generateReport(allSequences);
+        
+        // Display report in a dialog
+        String reportText = report.formatReport();
+        
+        JTextArea textArea = new JTextArea(reportText);
+        textArea.setEditable(false);
+        textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        textArea.setBackground(Color.WHITE);
+        
+        JScrollPane scrollPane = new JScrollPane(textArea);
+        scrollPane.setPreferredSize(new Dimension(500, 400));
+        
+        JOptionPane.showMessageDialog(this, scrollPane, "Shape Usage Report", JOptionPane.INFORMATION_MESSAGE);
     }
     
     private void loadShapes() {
@@ -192,250 +354,6 @@ public class MainWindow extends JFrame {
      */
     private void createShapePalettes() {
         shapePalettePanel.createPalettes();
-    }
-    
-    /**
-     * Adds a shape to the active sequence following workflow:
-     * 3.1) Add new shape button pressed
-     * 3.2) New object created and added to list (AlignPosition is null)
-     * 3.3) canvas cleared
-     * 3.4) start draw all shapes from the list by sequence
-     * 3.5) for first shape set default AlignPosition (center of canvas or initialX/Y, angle from rotation field)
-     * 3.6) draw first shape, set returned AlignPosition to next shape
-     * 3.7) loop till the end of shape list
-     */
-    private void addShapeToSequence(String key, int orientation) {
-        if (activeSequence == null) {
-            JOptionPane.showMessageDialog(this,
-                "No active sequence. Please create a sequence first.",
-                "No Active Sequence",
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-        
-        ShapeInstance shapeTemplate = shapeConfig.getShape(key);
-
-        // 3.2) New object created and added to list (AlignPosition is null)
-        ShapeInstance newShapeInstance = createShapeInstance(shapeTemplate);
-        
-        // Set orientation (only for annular sectors, rectangles always have orientation = 1)
-        if (newShapeInstance instanceof AnnularSector) {
-            newShapeInstance.setOrientation(orientation);
-        } else {
-            newShapeInstance.setOrientation(1); // Rectangles always have orientation = 1
-        }
-        
-        // Check if a shape is selected in the list
-        int selectedIndex = shapeSequenceList.getSelectedIndex();
-        int insertIndex;
-        if (selectedIndex >= 0 && selectedIndex < activeSequence.size()) {
-            // Insert after selected shape
-            insertIndex = selectedIndex + 1;
-        } else {
-            // Add at the end
-            insertIndex = activeSequence.size();
-        }
-        
-        // Insert the shape at the calculated index
-        // (insertShape handles color flag, deactivation, and activation)
-        activeSequence.insertShape(insertIndex, newShapeInstance);
-        
-        // Update list model
-        updateShapeList();
-        
-        // Keep selection on the newly added shape
-        shapeSequenceList.setSelectedIndex(insertIndex);
-        
-        // Redraw (colors will be recalculated in drawAll)
-        drawAll();
-    }
-    
-    /**
-     * Removes the selected shape from the active sequence, or the last one if none is selected.
-     */
-    private void removeSelectedOrLastShape() {
-        if (activeSequence == null || activeSequence.isEmpty()) {
-            return;
-        }
-        
-        int selectedIndex = shapeSequenceList.getSelectedIndex();
-        int removeIndex;
-        
-        if (selectedIndex >= 0 && selectedIndex < activeSequence.size()) {
-            // Remove selected shape
-            removeIndex = selectedIndex;
-        } else {
-            // Remove last shape if nothing is selected
-            removeIndex = activeSequence.size() - 1;
-        }
-        
-        // Deactivate the shape before removing
-        ShapeInstance shapeToRemove = activeSequence.getShape(removeIndex);
-        if (shapeToRemove != null) {
-            shapeToRemove.setActive(false);
-        }
-        
-        activeSequence.removeShape(removeIndex);
-        
-        updateShapeList();
-        
-        // Clear selection
-        shapeSequenceList.clearSelection();
-        
-        // Redraw (colors will be recalculated in drawAll)
-        drawAll();
-    }
-    
-    /**
-     * Called when shape selection changes in the list.
-     */
-    private void onShapeSelectionChanged() {
-        if (activeSequence == null) {
-            return;
-        }
-        
-        int selectedIndex = shapeSequenceList.getSelectedIndex();
-        
-        // Deactivate all shapes
-        for (ShapeInstance shape : activeSequence.getShapes()) {
-            shape.setActive(false);
-        }
-        
-        // Activate selected shape
-        if (selectedIndex >= 0 && selectedIndex < activeSequence.size()) {
-            ShapeInstance selectedShape = activeSequence.getShape(selectedIndex);
-            if (selectedShape != null) {
-                selectedShape.setActive(true);
-            }
-        }
-        
-        // Update list display (without triggering selection events)
-        updateShapeList();
-        
-        // Ensure the active shape is selected in the list
-        if (selectedIndex >= 0 && selectedIndex < shapeSequenceModel.getSize()) {
-            shapeSequenceList.setSelectedIndex(selectedIndex);
-        }
-        
-        // Redraw to update colors (colors will be recalculated in drawAll)
-        drawAll();
-    }
-    
-    /**
-     * Updates the shape list model to reflect the active sequence.
-     * Temporarily disables selection listener to prevent circular calls.
-     */
-    private void updateShapeList() {
-        // Temporarily disable selection listener to prevent circular calls
-        javax.swing.event.ListSelectionListener[] listeners = shapeSequenceList.getListSelectionListeners();
-        for (javax.swing.event.ListSelectionListener listener : listeners) {
-            shapeSequenceList.removeListSelectionListener(listener);
-        }
-        
-        try {
-            shapeSequenceModel.clear();
-            
-            int activeShapeIndex = -1;
-            if (activeSequence != null) {
-                for (int i = 0; i < activeSequence.size(); i++) {
-                    ShapeInstance shape = activeSequence.getShape(i);
-                    String displayKey = shape.getKey();
-                    if (shape instanceof AnnularSector && shape.getOrientation() == -1) {
-                        displayKey = "-" + displayKey;
-                    }
-                    if (shape.isActive()) {
-                        displayKey += " (active)";
-                        activeShapeIndex = i; // Remember the active shape index
-                    }
-                    shapeSequenceModel.addElement(displayKey);
-                }
-            }
-            
-            // Select the active shape if there is one
-            if (activeShapeIndex >= 0 && activeShapeIndex < shapeSequenceModel.getSize()) {
-                shapeSequenceList.setSelectedIndex(activeShapeIndex);
-            }
-        } finally {
-            // Re-enable selection listeners
-            for (javax.swing.event.ListSelectionListener listener : listeners) {
-                shapeSequenceList.addListSelectionListener(listener);
-            }
-        }
-    }
-    
-    /**
-     * Creates a new ShapeInstance from a template.
-     */
-    private ShapeInstance createShapeInstance(ShapeInstance template) {
-        if (template instanceof AnnularSector) {
-            AnnularSector sector = (AnnularSector) template;
-            return new AnnularSector(sector.getKey(), sector.getExternalDiameter(), 
-                sector.getAngleDegrees(), sector.getWidth());
-        } else if (template instanceof Rectangle) {
-            Rectangle rect = (Rectangle) template;
-            return new Rectangle(rect.getKey(), rect.getLength(), rect.getWidth());
-        }
-        throw new IllegalArgumentException("Unknown shape type: " + template.getType());
-    }
-    
-    /**
-     * Clears the active shape sequence.
-     */
-    private void clearSequence() {
-        if (activeSequence != null) {
-            activeSequence.clear();
-            updateShapeList();
-            drawAll();
-        }
-    }
-    
-    /**
-     * Updates the sequence panel with current sequences.
-     */
-    private void updateSequencePanel() {
-        shapeSequencePanel.setSequences(allSequences);
-    }
-    
-    /**
-     * Recalculates colors for all sequences.
-     * Processes sequences in order - since sequences can only depend on sequences above them,
-     * we can safely recalculate them in list order without additional dependency checks.
-     */
-    private void recalculateAllColors() {
-        // Sync sequences from panel to MainWindow
-        allSequences = shapeSequencePanel.getSequences();
-        
-        // Process sequences in order - each sequence can only depend on sequences above it
-        // The linked shape's color is already calculated because it's from a sequence processed earlier
-        for (ShapeSequence sequence : allSequences) {
-            sequence.recalculateColors();
-        }
-    }
-    
-    /**
-     * Draws all shapes following workflow:
-     * 3.3) canvas cleared
-     * 3.4) start draw all shapes from the list by sequence
-     * 3.5) for first shape set default AlignPosition (center of canvas, angle 0)
-     * 3.6) draw first shape, set returned AlignPosition to next shape
-     * 3.7) loop till the end of shape list
-     */
-    private void drawAll() {
-        // Sync sequences from panel to MainWindow
-        allSequences = shapeSequencePanel.getSequences();
-        activeSequence = shapeSequencePanel.getActiveSequence();
-        
-        // Recalculate colors before drawing
-        recalculateAllColors();
-        
-        // Update shape list for active sequence
-        updateShapeList();
-        
-        // Update drawing panel with all sequences
-        drawingPanel.setSequences(allSequences);
-        
-        // Trigger repaint
-        drawingPanel.drawAll();
     }
     
     public static void main(String[] args) {

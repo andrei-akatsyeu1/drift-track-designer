@@ -1,5 +1,6 @@
 package com.trackdraw.view;
 
+import com.trackdraw.config.GlobalScale;
 import com.trackdraw.model.AlignPosition;
 import com.trackdraw.model.ShapeSequence;
 
@@ -17,6 +18,15 @@ public class DrawingPanel extends JPanel {
     public DrawingPanel() {
         setBackground(Color.WHITE);
         setPreferredSize(new Dimension(800, 600));
+        setFocusable(true);
+        
+        // Request focus when clicked so keyboard controls work
+        addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                requestFocusInWindow();
+            }
+        });
     }
     
     /**
@@ -62,21 +72,46 @@ public class DrawingPanel extends JPanel {
         // 3.3) Canvas cleared (already done by super.paint())
         
         // Draw all sequences (not just active ones)
+        // Get canvas center for scaling reference
+        double canvasCenterX = getWidth() / 2.0;
+        double canvasCenterY = getHeight() / 2.0;
+        double currentScale = GlobalScale.getScale();
+        
         for (ShapeSequence sequence : sequences) {
             if (sequence.isEmpty()) {
                 continue;
             }
             
             // Determine initial alignment position
-            AlignPosition initialAlignPosition = sequence.getEffectiveInitialAlignment();
+            AlignPosition initialAlignPosition = null;
+            
+            // Check if sequence is linked to a shape (linked sequences don't need scaling)
+            if (sequence.getInitialAlignmentAsShape() != null) {
+                // Linked sequence - use effective alignment directly (already calculated correctly)
+                initialAlignPosition = sequence.getEffectiveInitialAlignment();
+            } else {
+                // Independent sequence - scale the stored position
+                AlignPosition storedPosition = sequence.getInitialAlignmentAsPosition();
+                
+                if (storedPosition != null) {
+                    // Scale position relative to canvas center
+                    // Position is stored at scale 1.0, so scale by current scale
+                    double offsetX = storedPosition.getX() - canvasCenterX;
+                    double offsetY = storedPosition.getY() - canvasCenterY;
+                    
+                    double scaledX = canvasCenterX + offsetX * currentScale;
+                    double scaledY = canvasCenterY + offsetY * currentScale;
+                    
+                    initialAlignPosition = new AlignPosition(scaledX, scaledY, storedPosition.getAngle());
+                } else {
+                    // No stored position - use center of canvas
+                    initialAlignPosition = new AlignPosition(canvasCenterX, canvasCenterY, 0.0);
+                }
+            }
 
             if (initialAlignPosition == null) {
-                // If no initial alignment set, use center of canvas
-                double desiredCenterX = getWidth() / 2.0;
-                double desiredCenterY = getHeight() / 2.0;
-                double initialRotationAngle = 0.0;
-
-                initialAlignPosition = new AlignPosition(desiredCenterX, desiredCenterY, initialRotationAngle);
+                // Fallback: use center of canvas
+                initialAlignPosition = new AlignPosition(canvasCenterX, canvasCenterY, 0.0);
             }
             
             // Draw the sequence

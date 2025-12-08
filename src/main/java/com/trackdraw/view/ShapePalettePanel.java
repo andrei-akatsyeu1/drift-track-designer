@@ -23,6 +23,7 @@ public class ShapePalettePanel extends JPanel {
     private ShapeConfig shapeConfig;
     private BiConsumer<String, Integer> shapeSelectionHandler; // Handler for shape selection (key, orientation)
     private Runnable removeHandler; // Handler for remove button
+    private Runnable invertColorHandler; // Handler for invert color button
     
     public ShapePalettePanel(ShapeConfig shapeConfig) {
         this.shapeConfig = shapeConfig;
@@ -47,16 +48,28 @@ public class ShapePalettePanel extends JPanel {
         setPreferredSize(new Dimension(0, 100)); // Height for 2 rows of buttons with padding
         add(palettesPanel, BorderLayout.CENTER);
         
-        // Add Remove button at the bottom, wrapped in a FlowLayout panel to prevent full width
-        JPanel removeButtonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        JButton removeButton = new JButton("Remove");
+        // Add Remove and Invert Color buttons at the bottom, wrapped in a FlowLayout panel to prevent full width
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton removeButton = new JButton("🗑");
+        setButtonFont(removeButton);
+        removeButton.setToolTipText("Remove selected or last shape");
         removeButton.addActionListener(e -> {
             if (removeHandler != null) {
                 removeHandler.run();
             }
         });
-        removeButtonPanel.add(removeButton);
-        add(removeButtonPanel, BorderLayout.SOUTH);
+        buttonPanel.add(removeButton);
+        
+        JButton invertColorButton = new JButton("↻🎨");
+        setButtonFont(invertColorButton);
+        invertColorButton.setToolTipText("Invert color of selected shape");
+        invertColorButton.addActionListener(e -> {
+            if (invertColorHandler != null) {
+                invertColorHandler.run();
+            }
+        });
+        buttonPanel.add(invertColorButton);
+        add(buttonPanel, BorderLayout.SOUTH);
     }
     
     /**
@@ -76,6 +89,24 @@ public class ShapePalettePanel extends JPanel {
     }
     
     /**
+     * Sets the handler to be called when the Invert Color button is clicked.
+     * @param handler Handler to invert color of selected shape
+     */
+    public void setInvertColorHandler(Runnable handler) {
+        this.invertColorHandler = handler;
+    }
+    
+    /**
+     * Sets a larger font for a button.
+     * @param button Button to set font for
+     */
+    private void setButtonFont(JButton button) {
+        Font currentFont = button.getFont();
+        Font largerFont = new Font(currentFont.getName(), currentFont.getStyle(), currentFont.getSize() + 4);
+        button.setFont(largerFont);
+    }
+    
+    /**
      * Creates a button with fixed size.
      * @param displayText Text to display on the button
      * @param shapeKey The actual shape key (for the handler)
@@ -87,6 +118,9 @@ public class ShapePalettePanel extends JPanel {
         button.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         button.setMinimumSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         button.setMaximumSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
+        setButtonFont(button);
+        String tooltip = "Add shape: " + displayText + (orientation == -1 ? " (orientation: -1)" : "");
+        button.setToolTipText(tooltip);
         button.addActionListener(e -> {
             if (shapeSelectionHandler != null) {
                 shapeSelectionHandler.accept(shapeKey, orientation);
