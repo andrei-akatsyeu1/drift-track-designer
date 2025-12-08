@@ -81,9 +81,36 @@ public class ShapeSequence {
      * inserts the shape, and activates the newly inserted shape.
      * @param index Index at which to insert the shape
      * @param shape ShapeInstance to insert
+     * @throws IllegalArgumentException if validation fails
      */
     public void insertShape(int index, ShapeInstance shape) {
         if (shape != null && index >= 0 && index <= shapes.size()) {
+            // Validate before inserting
+            com.trackdraw.validation.SequenceValidator.ValidationResult result = 
+                com.trackdraw.validation.SequenceValidator.validateAddShape(this, shape);
+            if (!result.isValid()) {
+                throw new IllegalArgumentException(result.getErrorMessage());
+            }
+            
+            // If this is the first shape being added to a linked sequence, validate the combination
+            if (shapes.isEmpty() && index == 0) {
+                ShapeInstance linkedShape = getInitialAlignmentAsShape();
+                if (linkedShape != null) {
+                    // Create a temporary sequence with just this shape to validate
+                    ShapeSequence tempSeq = new ShapeSequence("temp");
+                    tempSeq.setInvertAlignment(this.invertAlignment);
+                    // Temporarily add the shape to validate (we'll add it properly below)
+                    ShapeInstance tempShape = createTempShapeCopy(shape);
+                    tempSeq.shapes.add(tempShape);
+                    
+                    com.trackdraw.validation.SequenceValidator.ValidationResult linkResult = 
+                        com.trackdraw.validation.SequenceValidator.validateLinkedSequence(linkedShape, tempSeq);
+                    if (!linkResult.isValid()) {
+                        throw new IllegalArgumentException(linkResult.getErrorMessage());
+                    }
+                }
+            }
+            
             // Set default color flag (white)
             shape.setRed(false);
             
@@ -98,6 +125,38 @@ public class ShapeSequence {
             // Activate the newly inserted shape
             shape.setActive(true);
         }
+    }
+    
+    /**
+     * Creates a temporary copy of a shape for validation purposes.
+     * This is needed to avoid modifying the original shape during validation.
+     */
+    private ShapeInstance createTempShapeCopy(ShapeInstance original) {
+        // Create a copy with the same key and color properties for validation
+        if (original instanceof com.trackdraw.model.AnnularSector) {
+            com.trackdraw.model.AnnularSector sector = (com.trackdraw.model.AnnularSector) original;
+            com.trackdraw.model.AnnularSector copy = new com.trackdraw.model.AnnularSector(
+                sector.getKey(), sector.getExternalDiameter(), 
+                sector.getAngleDegrees(), sector.getWidth());
+            copy.setRed(sector.isRed());
+            copy.setForceInvertColor(sector.isForceInvertColor());
+            return copy;
+        } else if (original instanceof com.trackdraw.model.Rectangle) {
+            com.trackdraw.model.Rectangle rect = (com.trackdraw.model.Rectangle) original;
+            com.trackdraw.model.Rectangle copy = new com.trackdraw.model.Rectangle(
+                rect.getKey(), rect.getLength(), rect.getWidth());
+            copy.setRed(rect.isRed());
+            copy.setForceInvertColor(rect.isForceInvertColor());
+            return copy;
+        } else if (original instanceof com.trackdraw.model.HalfCircle) {
+            com.trackdraw.model.HalfCircle halfCircle = (com.trackdraw.model.HalfCircle) original;
+            com.trackdraw.model.HalfCircle copy = new com.trackdraw.model.HalfCircle(
+                halfCircle.getKey(), halfCircle.getDiameter());
+            copy.setRed(halfCircle.isRed());
+            copy.setForceInvertColor(halfCircle.isForceInvertColor());
+            return copy;
+        }
+        return original; // Fallback
     }
     
     /**

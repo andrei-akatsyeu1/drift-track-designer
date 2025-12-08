@@ -10,7 +10,6 @@ import java.awt.geom.Rectangle2D;
  * Defined by length and width.
  */
 public class Rectangle extends ShapeInstance {
-    private String key;
     private double length;
     private double width;
     
@@ -21,11 +20,6 @@ public class Rectangle extends ShapeInstance {
         this.key = key;
         this.length = length;
         this.width = width;
-    }
-    
-    @Override
-    public String getKey() {
-        return key;
     }
     
     @Override

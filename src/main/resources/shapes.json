@@ -65,6 +65,11 @@
       "key": "L7",
       "length": 7.0,
       "width": 6.0
+    },
+    {
+      "type": "half_circle",
+      "key": "E",
+      "diameter": 6.0
     }
   ]
 }

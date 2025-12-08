@@ -2,9 +2,11 @@ package com.trackdraw.view;
 
 import com.trackdraw.config.ShapeConfig;
 import com.trackdraw.model.AnnularSector;
+import com.trackdraw.model.HalfCircle;
 import com.trackdraw.model.Rectangle;
 import com.trackdraw.model.ShapeInstance;
 import com.trackdraw.model.ShapeSequence;
+import java.util.function.Consumer;
 
 /**
  * Controller for managing shape sequence operations (add, remove, clear, selection).
@@ -14,12 +16,20 @@ public class ShapeSequenceController {
     private ShapeSequence activeSequence;
     private ShapeListPanel shapeListPanel;
     private DrawingCoordinator drawingCoordinator;
+    private Consumer<String> statusMessageHandler;
     
     public ShapeSequenceController(ShapeConfig shapeConfig, ShapeListPanel shapeListPanel, 
                                    DrawingCoordinator drawingCoordinator) {
         this.shapeConfig = shapeConfig;
         this.shapeListPanel = shapeListPanel;
         this.drawingCoordinator = drawingCoordinator;
+    }
+    
+    /**
+     * Sets the status message handler for displaying validation errors.
+     */
+    public void setStatusMessageHandler(Consumer<String> handler) {
+        this.statusMessageHandler = handler;
     }
     
     /**
@@ -66,16 +76,23 @@ public class ShapeSequenceController {
         
         // Insert the shape at the calculated index
         // (insertShape handles color flag, deactivation, and activation)
-        activeSequence.insertShape(insertIndex, newShapeInstance);
-        
-        // Update list model
-        shapeListPanel.updateShapeList();
-        
-        // Keep selection on the newly added shape
-        shapeListPanel.setSelectedIndex(insertIndex);
-        
-        // Redraw (colors will be recalculated in drawAll)
-        drawingCoordinator.drawAll();
+        try {
+            activeSequence.insertShape(insertIndex, newShapeInstance);
+            
+            // Update list model
+            shapeListPanel.updateShapeList();
+            
+            // Keep selection on the newly added shape
+            shapeListPanel.setSelectedIndex(insertIndex);
+            
+            // Redraw (colors will be recalculated in drawAll)
+            drawingCoordinator.drawAll();
+        } catch (IllegalArgumentException e) {
+            // Validation failed - show error message
+            if (statusMessageHandler != null) {
+                statusMessageHandler.accept(e.getMessage());
+            }
+        }
     }
     
     /**
@@ -192,6 +209,9 @@ public class ShapeSequenceController {
         } else if (template instanceof Rectangle) {
             Rectangle rect = (Rectangle) template;
             return new Rectangle(rect.getKey(), rect.getLength(), rect.getWidth());
+        } else if (template instanceof HalfCircle) {
+            HalfCircle halfCircle = (HalfCircle) template;
+            return new HalfCircle(halfCircle.getKey(), halfCircle.getDiameter());
         }
         throw new IllegalArgumentException("Unknown shape type: " + template.getType());
     }

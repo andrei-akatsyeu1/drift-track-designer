@@ -76,12 +76,13 @@ public class SequenceData {
     @NoArgsConstructor
     public static class ShapeInstanceData {
         private UUID id;
-        private String type; // "annular_sector" or "rectangle"
+        private String type; // "annular_sector", "rectangle", or "half_circle"
         private String key;
         private double externalDiameter; // For annular_sector
         private double angleDegrees; // For annular_sector
         private double width; // For annular_sector or rectangle
         private double length; // For rectangle
+        private double diameter; // For half_circle
         private int orientation;
         private boolean active;
         private boolean isRed;

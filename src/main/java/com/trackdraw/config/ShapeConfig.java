@@ -2,6 +2,7 @@ package com.trackdraw.config;
 
 import com.trackdraw.model.AnnularSector;
 import com.trackdraw.model.Rectangle;
+import com.trackdraw.model.HalfCircle;
 import com.trackdraw.model.ShapeInstance;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -61,6 +62,9 @@ public class ShapeConfig {
                     Rectangle r = (Rectangle) src;
                     jsonObject.addProperty("length", r.getLength());
                     jsonObject.addProperty("width", r.getWidth());
+                } else if (src instanceof HalfCircle) {
+                    HalfCircle hc = (HalfCircle) src;
+                    jsonObject.addProperty("diameter", hc.getDiameter());
                 }
                 
                 return jsonObject;
@@ -85,6 +89,9 @@ public class ShapeConfig {
                     double length = jsonObject.get("length").getAsDouble();
                     double width = jsonObject.get("width").getAsDouble();
                     return new Rectangle(key, length, width);
+                } else if ("half_circle".equals(type)) {
+                    double diameter = jsonObject.get("diameter").getAsDouble();
+                    return new HalfCircle(key, diameter);
                 }
                 
                 throw new JsonParseException("Unknown shape type: " + type);

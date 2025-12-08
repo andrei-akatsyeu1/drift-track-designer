@@ -10,7 +10,6 @@ import java.awt.geom.Arc2D;
  * Defined by external diameter, angle in degrees, and width.
  */
 public class AnnularSector extends ShapeInstance {
-    private String key;
     private double externalDiameter;
     private double angleDegrees;
     private double width;
@@ -23,11 +22,6 @@ public class AnnularSector extends ShapeInstance {
         this.externalDiameter = externalDiameter;
         this.angleDegrees = angleDegrees;
         this.width = width;
-    }
-    
-    @Override
-    public String getKey() {
-        return key;
     }
     
     @Override

@@ -3,6 +3,7 @@ package com.trackdraw.config;
 import com.trackdraw.model.AlignPosition;
 import com.trackdraw.model.AnnularSector;
 import com.trackdraw.model.Rectangle;
+import com.trackdraw.model.HalfCircle;
 import com.trackdraw.model.ShapeInstance;
 import com.trackdraw.model.ShapeSequence;
 import com.google.gson.Gson;
@@ -251,6 +252,9 @@ public class SequenceManager {
             Rectangle rect = (Rectangle) shape;
             data.setLength(rect.getLength());
             data.setWidth(rect.getWidth());
+        } else if (shape instanceof HalfCircle) {
+            HalfCircle hc = (HalfCircle) shape;
+            data.setDiameter(hc.getDiameter());
         }
         
         return data;
@@ -274,6 +278,11 @@ public class SequenceManager {
                 shapeData.getKey(),
                 shapeData.getLength(),
                 shapeData.getWidth()
+            );
+        } else if ("half_circle".equals(shapeData.getType())) {
+            shape = new HalfCircle(
+                shapeData.getKey(),
+                shapeData.getDiameter()
             );
         } else {
             throw new IllegalArgumentException("Unknown shape type: " + shapeData.getType());

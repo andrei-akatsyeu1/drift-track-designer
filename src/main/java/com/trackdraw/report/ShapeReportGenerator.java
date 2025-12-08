@@ -30,17 +30,73 @@ public class ShapeReportGenerator {
     
     /**
      * Represents a complex shape (linked shape + first shape of linked sequence).
+     * Includes shape keys, orientations, and color.
+     * Order doesn't matter - pairs are normalized so (A, o1) + (B, o2) equals (B, o2) + (A, o1).
      */
     @Data
-    @AllArgsConstructor
     public static class ComplexShape {
-        private String parentShapeKey;
-        private String childShapeKey;
+        private String shapeKey1;
+        private int orientation1;
+        private String shapeKey2;
+        private int orientation2;
         private boolean isRed;
+        
+        public ComplexShape(String parentShapeKey, int parentOrientation, 
+                           String childShapeKey, int childOrientation, boolean isRed) {
+            // Normalize order: sort by shape key first, then by orientation if keys are equal
+            // This ensures (A, o1) + (B, o2) equals (B, o2) + (A, o1)
+            int keyCompare = parentShapeKey.compareTo(childShapeKey);
+            if (keyCompare < 0) {
+                // parentShapeKey < childShapeKey: keep order
+                this.shapeKey1 = parentShapeKey;
+                this.orientation1 = parentOrientation;
+                this.shapeKey2 = childShapeKey;
+                this.orientation2 = childOrientation;
+            } else if (keyCompare > 0) {
+                // parentShapeKey > childShapeKey: swap
+                this.shapeKey1 = childShapeKey;
+                this.orientation1 = childOrientation;
+                this.shapeKey2 = parentShapeKey;
+                this.orientation2 = parentOrientation;
+            } else {
+                // Same shape key: sort by orientation
+                if (parentOrientation <= childOrientation) {
+                    this.shapeKey1 = parentShapeKey;
+                    this.orientation1 = parentOrientation;
+                    this.shapeKey2 = childShapeKey;
+                    this.orientation2 = childOrientation;
+                } else {
+                    this.shapeKey1 = childShapeKey;
+                    this.orientation1 = childOrientation;
+                    this.shapeKey2 = parentShapeKey;
+                    this.orientation2 = parentOrientation;
+                }
+            }
+            this.isRed = isRed;
+        }
         
         @Override
         public String toString() {
-            return parentShapeKey + "+" + childShapeKey + (isRed ? " (red)" : " (white)");
+            return shapeKey1 + "(" + (orientation1 == 1 ? "+" : "-") + ") + " +
+                   shapeKey2 + "(" + (orientation2 == 1 ? "+" : "-") + ")" +
+                   (isRed ? " (red)" : " (white)");
+        }
+        
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ComplexShape that = (ComplexShape) o;
+            return orientation1 == that.orientation1 &&
+                   orientation2 == that.orientation2 &&
+                   isRed == that.isRed &&
+                   Objects.equals(shapeKey1, that.shapeKey1) &&
+                   Objects.equals(shapeKey2, that.shapeKey2);
+        }
+        
+        @Override
+        public int hashCode() {
+            return Objects.hash(shapeKey1, orientation1, shapeKey2, orientation2, isRed);
         }
     }
     
@@ -95,7 +151,9 @@ public class ShapeReportGenerator {
                         
                         ComplexShape complexShape = new ComplexShape(
                             linkedShape.getKey(),
+                            linkedShape.getOrientation(),
                             firstShapeOfLinked.getKey(),
+                            firstShapeOfLinked.getOrientation(),
                             isRed
                         );
                         

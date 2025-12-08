@@ -195,6 +195,9 @@ public class MainWindow extends JFrame {
         // Set invert color handler for the palette panel
         shapePalettePanel.setInvertColorHandler(() -> sequenceController.toggleInvertColor());
         
+        // Set status message handler for sequence controller
+        sequenceController.setStatusMessageHandler(message -> statusBar.setStatus(message, 5000));
+        
         // Setup handler for sequence panel
         shapeSequencePanel.setSequenceChangeHandler(seq -> {
             // Sync sequences from panel to MainWindow

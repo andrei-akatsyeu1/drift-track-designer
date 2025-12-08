@@ -11,6 +11,7 @@ import java.util.UUID;
  */
 public abstract class ShapeInstance {
     private UUID id;
+    protected String key; // Shape key/identifier
     protected AlignPosition alignPosition; // Position where this shape should be aligned to (null for first shape)
     protected Color contourColor;
     protected Color infillColor;
@@ -27,6 +28,14 @@ public abstract class ShapeInstance {
         this.active = false; // Default to not active
         this.isRed = false; // Default to white
         this.forceInvertColor = false; // Default to no inversion
+    }
+    
+    public String getKey() {
+        return key;
+    }
+    
+    public void setKey(String key) {
+        this.key = key;
     }
     
     public UUID getId() {
@@ -106,11 +115,6 @@ public abstract class ShapeInstance {
         return forceInvertColor ? !isRed : isRed;
     }
     
-    /**
-     * Gets the unique key/identifier for this shape.
-     * @return shape key
-     */
-    public abstract String getKey();
     
     /**
      * Gets the type of shape (e.g., "annular_sector", "rectangle").
