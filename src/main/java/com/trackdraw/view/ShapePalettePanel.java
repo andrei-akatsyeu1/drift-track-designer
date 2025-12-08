@@ -15,7 +15,7 @@ import java.util.function.BiConsumer;
  * Two palettes: one for orientation = 1, one for orientation = -1.
  */
 public class ShapePalettePanel extends JPanel {
-    private static final int BUTTON_WIDTH = 50; // Fixed width for all buttons
+    private static final int BUTTON_WIDTH = 60; // Fixed width for all buttons (increased to fit "-05", "-10", etc.)
     private static final int BUTTON_HEIGHT = 30; // Fixed height for all buttons
     
     private JPanel palettePanel1; // Palette for orientation = 1
@@ -45,7 +45,8 @@ public class ShapePalettePanel extends JPanel {
         palettesPanel.add(palettePanel2);
         
         // Set preferred height to fit 2 rows of buttons plus some padding
-        setPreferredSize(new Dimension(0, 100)); // Height for 2 rows of buttons with padding
+        // Increased height to provide more vertical space and prevent clipping
+        setPreferredSize(new Dimension(0, 120)); // Height for 2 rows of buttons with extra padding
         add(palettesPanel, BorderLayout.CENTER);
         
         // Add Remove and Invert Color buttons at the bottom, wrapped in a FlowLayout panel to prevent full width
@@ -98,11 +99,12 @@ public class ShapePalettePanel extends JPanel {
     
     /**
      * Sets a larger font for a button.
+     * Uses a font that supports Unicode characters well.
      * @param button Button to set font for
      */
     private void setButtonFont(JButton button) {
-        Font currentFont = button.getFont();
-        Font largerFont = new Font(currentFont.getName(), currentFont.getStyle(), currentFont.getSize() + 4);
+        // Use a font that supports Unicode well, with larger size
+        Font largerFont = new Font(Font.SANS_SERIF, Font.PLAIN, 16);
         button.setFont(largerFont);
     }
     
@@ -115,10 +117,15 @@ public class ShapePalettePanel extends JPanel {
      */
     private JButton createFixedSizeButton(String displayText, String shapeKey, int orientation) {
         JButton button = new JButton(displayText);
+        // Set fixed size to ensure consistent button dimensions
         button.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         button.setMinimumSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         button.setMaximumSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
+        // Set font before setting size to ensure text fits properly
         setButtonFont(button);
+        // Ensure text is not clipped - set horizontal and vertical text position
+        button.setHorizontalTextPosition(SwingConstants.CENTER);
+        button.setVerticalTextPosition(SwingConstants.CENTER);
         String tooltip = "Add shape: " + displayText + (orientation == -1 ? " (orientation: -1)" : "");
         button.setToolTipText(tooltip);
         button.addActionListener(e -> {

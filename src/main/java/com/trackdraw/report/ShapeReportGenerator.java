@@ -82,29 +82,19 @@ public class ShapeReportGenerator {
             // Check if this sequence is linked to a shape
             ShapeInstance linkedShape = sequence.getInitialAlignmentAsShape();
             if (linkedShape != null && !sequence.isEmpty()) {
-                // This is a linked sequence
-                // Find the next shape after the linked shape in its original sequence
-                ShapeSequence parentSequence = shapeToSequenceMap.get(linkedShape);
-                Integer linkedShapeIndex = shapeToIndexMap.get(linkedShape);
-                
-                if (parentSequence != null && linkedShapeIndex != null) {
-                    // Get the next shape after the linked shape
-                    int nextShapeIndex = linkedShapeIndex + 1;
-                    ShapeInstance nextShapeInParent = null;
-                    if (nextShapeIndex < parentSequence.size()) {
-                        nextShapeInParent = parentSequence.getShape(nextShapeIndex);
-                    }
-                    
-                    // Get the first shape of the linked sequence
+                // Complex shapes only apply if invertAlignment is false
+                if (!sequence.isInvertAlignment()) {
+                    // This is a linked sequence with normal alignment
+                    // Complex shape = linked shape + first shape of linked sequence
                     ShapeInstance firstShapeOfLinked = sequence.getShape(0);
                     
-                    if (nextShapeInParent != null && firstShapeOfLinked != null) {
-                        // The next shape in parent sequence + first shape of linked sequence form a complex shape
+                    if (firstShapeOfLinked != null) {
+                        // The linked shape + first shape of linked sequence form a complex shape
                         // Determine color: use the first shape's color (which is opposite to linked shape)
                         boolean isRed = firstShapeOfLinked.isRed();
                         
                         ComplexShape complexShape = new ComplexShape(
-                            nextShapeInParent.getKey(),
+                            linkedShape.getKey(),
                             firstShapeOfLinked.getKey(),
                             isRed
                         );
@@ -112,10 +102,11 @@ public class ShapeReportGenerator {
                         complexShapes.put(complexShape, complexShapes.getOrDefault(complexShape, 0) + 1);
                         
                         // Mark these specific shape instances as excluded from regular counts
-                        excludedShapes.add(nextShapeInParent);
+                        excludedShapes.add(linkedShape);
                         excludedShapes.add(firstShapeOfLinked);
                     }
                 }
+                // If invertAlignment is true, shapes are counted normally (not as complex shapes)
             }
         }
         
@@ -125,10 +116,6 @@ public class ShapeReportGenerator {
                 continue;
             }
             
-            // Check if this sequence is linked
-            ShapeInstance linkedShape = sequence.getInitialAlignmentAsShape();
-            boolean isLinkedSequence = linkedShape != null;
-            
             for (int i = 0; i < sequence.size(); i++) {
                 ShapeInstance shape = sequence.getShape(i);
                 if (shape == null) {
@@ -137,11 +124,6 @@ public class ShapeReportGenerator {
                 
                 // Skip if this shape is part of a complex shape
                 if (excludedShapes.contains(shape)) {
-                    continue;
-                }
-                
-                // Skip first shape of linked sequence (already counted as complex shape)
-                if (isLinkedSequence && i == 0) {
                     continue;
                 }
                 

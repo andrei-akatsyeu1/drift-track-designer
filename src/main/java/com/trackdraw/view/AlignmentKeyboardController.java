@@ -168,41 +168,56 @@ public class AlignmentKeyboardController {
         // Get or create the initial alignment position
         AlignPosition alignPos = activeSequence.getInitialAlignmentAsPosition();
         
+        // Get current scale - positions are stored relative to (0,0) at scale 1.0
+        double currentScale = com.trackdraw.config.GlobalScale.getScale();
+        
         if (alignPos == null) {
-            // If no alignment position exists, create one at center of canvas
-            // Store it normalized to scale 1.0 (relative to canvas center)
-            double canvasCenterX = drawingPanel.getWidth() / 2.0;
-            double canvasCenterY = drawingPanel.getHeight() / 2.0;
-            double initialRotationAngle = 0.0;
+            // If no alignment position exists, we need to get the current visual position
+            // by checking where the sequence is actually drawn, then store it relative to (0,0)
             
+            // First, let's check if the sequence has been drawn - if so, get the actual position
+            // from the first shape's alignPosition (which is set during drawing)
             ShapeInstance firstShape = activeSequence.getShape(0);
             if (firstShape == null) {
                 return;
             }
             
-            // Calculate the first short side center from the desired shape center
-            double[] firstSideCenter = firstShape.calculateAlignPositionFromCenter(canvasCenterX, canvasCenterY, initialRotationAngle);
-            // Store position normalized to scale 1.0 (relative to canvas center)
-            alignPos = new AlignPosition(firstSideCenter[0], firstSideCenter[1], initialRotationAngle);
+            // Check if first shape has alignPosition set (from previous drawing)
+            AlignPosition firstShapeAlignPos = firstShape.getAlignPosition();
+            if (firstShapeAlignPos != null) {
+                // Use the actual drawn position, normalize to scale 1.0 relative to (0,0)
+                double currentX = firstShapeAlignPos.getX();
+                double currentY = firstShapeAlignPos.getY();
+                // Normalize to scale 1.0 (relative to 0,0)
+                double normalizedX = currentX / currentScale;
+                double normalizedY = currentY / currentScale;
+                alignPos = new AlignPosition(normalizedX, normalizedY, firstShapeAlignPos.getAngle());
+            } else {
+                // No drawn position yet - create one at center, normalized to scale 1.0 relative to (0,0)
+                double canvasCenterX = drawingPanel.getWidth() / 2.0;
+                double canvasCenterY = drawingPanel.getHeight() / 2.0;
+                double initialRotationAngle = 0.0;
+                // Calculate the first short side center from the desired shape center
+                double[] firstSideCenter = firstShape.calculateAlignPositionFromCenter(canvasCenterX, canvasCenterY, initialRotationAngle);
+                // Normalize to scale 1.0 (relative to 0,0) - store the actual position, not offset from center
+                double normalizedX = firstSideCenter[0] / currentScale;
+                double normalizedY = firstSideCenter[1] / currentScale;
+                alignPos = new AlignPosition(normalizedX, normalizedY, initialRotationAngle);
+            }
             activeSequence.setInitialAlignment(alignPos);
         }
         
-        // Get current scale and canvas center for normalization
-        double currentScale = com.trackdraw.config.GlobalScale.getScale();
-        double canvasCenterX = drawingPanel.getWidth() / 2.0;
-        double canvasCenterY = drawingPanel.getHeight() / 2.0;
-        
-        // Convert stored position (normalized to scale 1.0) to current scale for adjustment
-        double currentX = canvasCenterX + (alignPos.getX() - canvasCenterX) * currentScale;
-        double currentY = canvasCenterY + (alignPos.getY() - canvasCenterY) * currentScale;
+        // Convert stored position (relative to 0,0 at scale 1.0) to current scale
+        double currentX = alignPos.getX() * currentScale;
+        double currentY = alignPos.getY() * currentScale;
         
         // Adjust the position at current scale
         currentX += deltaX;
         currentY += deltaY;
         
-        // Normalize back to scale 1.0 for storage
-        alignPos.setX(canvasCenterX + (currentX - canvasCenterX) / currentScale);
-        alignPos.setY(canvasCenterY + (currentY - canvasCenterY) / currentScale);
+        // Normalize back to scale 1.0 relative to (0,0) for storage
+        alignPos.setX(currentX / currentScale);
+        alignPos.setY(currentY / currentScale);
         alignPos.setAngle(alignPos.getAngle() + deltaAngle);
         
         // Normalize angle to 0-360 range

@@ -1,25 +1,21 @@
 package com.trackdraw.view;
 
-import com.trackdraw.config.GlobalScale;
-
+import javax.swing.*;
 import java.awt.*;
 import java.util.function.Consumer;
 
 /**
- * Panel for controlling the global scale factor.
+ * Panel for controlling the background image scale factor.
  */
-public class ScaleControlPanel extends javax.swing.JPanel {
+public class BackgroundImageScalePanel extends JPanel {
     private ScaleControl scaleControl;
     private Consumer<Double> scaleChangeHandler;
     
-    public ScaleControlPanel() {
-        // Initialize with global scale value
-        double initialScale = GlobalScale.getScale();
-        scaleControl = new ScaleControl("Scale:", initialScale, 0.1, 10.0);
+    public BackgroundImageScalePanel() {
+        // Default scale is 1.0 (100%)
+        scaleControl = new ScaleControl("Image Scale:", 1.0, 0.1, 10.0);
         
-        // Sync with global scale
         scaleControl.setScaleChangeHandler(scale -> {
-            GlobalScale.setScale(scale);
             if (scaleChangeHandler != null) {
                 scaleChangeHandler.accept(scale);
             }
@@ -47,7 +43,6 @@ public class ScaleControlPanel extends javax.swing.JPanel {
      */
     public void setScale(double scale) {
         scaleControl.setScale(scale);
-        GlobalScale.setScale(scale);
     }
     
     /**

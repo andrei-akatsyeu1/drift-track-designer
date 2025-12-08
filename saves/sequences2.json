@@ -1,0 +1,93 @@
+{
+  "sequences": [
+    {
+      "name": "Main",
+      "active": true,
+      "invertAlignment": false,
+      "shapes": [
+        {
+          "id": "e71263da-ae0b-450b-859b-9cd4939ebfce",
+          "type": "annular_sector",
+          "key": "10",
+          "externalDiameter": 100.0,
+          "angleDegrees": 22.5,
+          "width": 6.0,
+          "length": 0.0,
+          "orientation": 1,
+          "active": false,
+          "isRed": true,
+          "forceInvertColor": false
+        },
+        {
+          "id": "b4eb5cad-3395-4993-88ad-49a33a81225e",
+          "type": "annular_sector",
+          "key": "10",
+          "externalDiameter": 100.0,
+          "angleDegrees": 22.5,
+          "width": 6.0,
+          "length": 0.0,
+          "orientation": 1,
+          "active": false,
+          "isRed": false,
+          "forceInvertColor": false
+        },
+        {
+          "id": "10072350-5062-4f1d-8afa-c01933ec8b1a",
+          "type": "annular_sector",
+          "key": "10",
+          "externalDiameter": 100.0,
+          "angleDegrees": 22.5,
+          "width": 6.0,
+          "length": 0.0,
+          "orientation": 1,
+          "active": false,
+          "isRed": true,
+          "forceInvertColor": false
+        },
+        {
+          "id": "42afc928-8138-469c-b9ef-ad7e237b7064",
+          "type": "annular_sector",
+          "key": "10",
+          "externalDiameter": 100.0,
+          "angleDegrees": 22.5,
+          "width": 6.0,
+          "length": 0.0,
+          "orientation": 1,
+          "active": false,
+          "isRed": false,
+          "forceInvertColor": false
+        },
+        {
+          "id": "c35caced-5045-4179-a140-61a513f1a3a0",
+          "type": "annular_sector",
+          "key": "10",
+          "externalDiameter": 100.0,
+          "angleDegrees": 22.5,
+          "width": 6.0,
+          "length": 0.0,
+          "orientation": 1,
+          "active": false,
+          "isRed": true,
+          "forceInvertColor": false
+        },
+        {
+          "id": "2a056ca0-66f0-4401-ad57-6a70c70343b7",
+          "type": "annular_sector",
+          "key": "10",
+          "externalDiameter": 100.0,
+          "angleDegrees": 22.5,
+          "width": 6.0,
+          "length": 0.0,
+          "orientation": 1,
+          "active": true,
+          "isRed": false,
+          "forceInvertColor": false
+        }
+      ]
+    }
+  ],
+  "backgroundImage": {
+    "imagePath": "9c126f88-19ce-430c-857e-496ca3330e4c.jpg",
+    "scale": 0.8
+  }
+}

@@ -203,7 +203,7 @@ public class ShapeSequence {
     /**
      * Gets the effective initial alignment position.
      * If set as AlignPosition, returns it directly.
-     * If set as ShapeInstance, returns its align position.
+     * If set as ShapeInstance, returns its align position (not calculateNextAlignPosition).
      * If invertAlignment is true and linked to a shape, inverts the angle by 180 degrees.
      * @return AlignPosition for the first shape, or null if not set
      */
@@ -213,10 +213,22 @@ public class ShapeSequence {
         if (initialAlignment instanceof AlignPosition) {
             alignPos = (AlignPosition) initialAlignment;
         } else if (initialAlignment instanceof ShapeInstance) {
-            alignPos = ((ShapeInstance) initialAlignment).calculateNextAlignPosition();
+            // Use the shape's AlignPosition directly, not calculateNextAlignPosition()
+            // The linked shape's alignPosition should already be set because sequences are drawn
+            // in dependency order (parent sequences before child sequences)
+            ShapeInstance linkedShape = (ShapeInstance) initialAlignment;
+            alignPos = linkedShape.getAlignPosition();
+            
+            // Assert that alignPos is not null - if it is, there's a bug in sequence ordering
+            assert alignPos != null : "Linked shape's alignPosition is null. " +
+                "This should not happen if sequences are drawn in dependency order. " +
+                "Linked shape: " + linkedShape.getKey() + " (ID: " + linkedShape.getId() + ")";
+            
+            // Create a copy to avoid modifying the original
+            alignPos = new AlignPosition(alignPos.getX(), alignPos.getY(), alignPos.getAngle());
             
             // If invertAlignment is true, invert the angle by 180 degrees
-            if (invertAlignment && alignPos != null) {
+            if (invertAlignment) {
                 double invertedAngle = alignPos.getAngle() + 180.0;
                 // Normalize angle to 0-360 range
                 while (invertedAngle < 0) invertedAngle += 360;

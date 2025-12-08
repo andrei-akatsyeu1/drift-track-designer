@@ -26,13 +26,16 @@ public class SequenceManager {
     }
     
     /**
-     * Saves sequences to a JSON file.
+     * Saves sequences and background image to a JSON file.
      * 
      * @param sequences List of sequences to save
+     * @param backgroundImagePath Path to background image (can be null)
+     * @param backgroundImageScale Scale of background image
      * @param filePath Path to the file (null for default)
      * @throws IOException If file writing fails
      */
-    public void saveSequences(List<ShapeSequence> sequences, String filePath) throws IOException {
+    public void saveSequences(List<ShapeSequence> sequences, String backgroundImagePath, 
+                             double backgroundImageScale, String filePath) throws IOException {
         String path = filePath != null ? filePath : DEFAULT_FILE;
         File file = new File(path);
         file.getParentFile().mkdirs();
@@ -43,80 +46,157 @@ public class SequenceManager {
             sequenceDataList.add(convertToData(sequence));
         }
         
+        // Create project data with sequences and background image
+        ProjectData projectData = new ProjectData();
+        projectData.setSequences(sequenceDataList);
+        
+        if (backgroundImagePath != null && !backgroundImagePath.isEmpty()) {
+            BackgroundImageData bgImage = new BackgroundImageData(backgroundImagePath, backgroundImageScale);
+            projectData.setBackgroundImage(bgImage);
+        }
+        
         try (Writer writer = new FileWriter(file, java.nio.charset.StandardCharsets.UTF_8)) {
-            gson.toJson(sequenceDataList, writer);
+            gson.toJson(projectData, writer);
         }
     }
     
     /**
-     * Loads sequences from a JSON file.
+     * Saves sequences to a JSON file (backward compatibility).
+     * 
+     * @param sequences List of sequences to save
+     * @param filePath Path to the file (null for default)
+     * @throws IOException If file writing fails
+     */
+    public void saveSequences(List<ShapeSequence> sequences, String filePath) throws IOException {
+        saveSequences(sequences, null, 1.0, filePath);
+    }
+    
+    /**
+     * Loads sequences and background image from a JSON file.
      * 
      * @param filePath Path to the file (null for default)
-     * @return List of loaded sequences
+     * @return LoadResult containing sequences and background image info
      * @throws IOException If file reading fails
      */
-    public List<ShapeSequence> loadSequences(String filePath) throws IOException {
+    public LoadResult loadSequences(String filePath) throws IOException {
         String path = filePath != null ? filePath : DEFAULT_FILE;
         File file = new File(path);
         
         if (!file.exists()) {
-            return new ArrayList<>();
+            return new LoadResult(new ArrayList<>(), null, 1.0);
         }
         
         try (Reader reader = new FileReader(file, java.nio.charset.StandardCharsets.UTF_8)) {
-            List<SequenceData> sequenceDataList = gson.fromJson(
-                reader,
-                new TypeToken<List<SequenceData>>(){}.getType()
-            );
-            
-            if (sequenceDataList == null) {
-                return new ArrayList<>();
-            }
-            
-            // First pass: create all sequences and shapes, build UUID map
-            Map<UUID, ShapeInstance> idToShapeMap = new HashMap<>();
-            List<ShapeSequence> sequences = new ArrayList<>();
-            
-            for (SequenceData seqData : sequenceDataList) {
-                ShapeSequence sequence = new ShapeSequence(seqData.getName());
-                sequence.setActive(seqData.isActive());
-                sequence.setInvertAlignment(seqData.isInvertAlignment());
-                
-                // Create shapes and build UUID map
-                for (SequenceData.ShapeInstanceData shapeData : seqData.getShapes()) {
-                    ShapeInstance shape = createShapeFromData(shapeData);
-                    sequence.addShape(shape);
-                    idToShapeMap.put(shape.getId(), shape);
+            // Try to load as ProjectData first (new format)
+            try {
+                ProjectData projectData = gson.fromJson(reader, ProjectData.class);
+                if (projectData != null && projectData.getSequences() != null) {
+                    List<ShapeSequence> sequences = convertSequencesFromData(projectData.getSequences());
+                    BackgroundImageData bgImage = projectData.getBackgroundImage();
+                    String bgImagePath = bgImage != null ? bgImage.getImagePath() : null;
+                    double bgImageScale = bgImage != null ? bgImage.getScale() : 1.0;
+                    return new LoadResult(sequences, bgImagePath, bgImageScale);
                 }
-                
-                sequences.add(sequence);
+            } catch (Exception e) {
+                // If ProjectData parsing fails, try old format (list of SequenceData)
+                reader.close();
+                try (Reader reader2 = new FileReader(file, java.nio.charset.StandardCharsets.UTF_8)) {
+                    List<SequenceData> sequenceDataList = gson.fromJson(
+                        reader2,
+                        new TypeToken<List<SequenceData>>(){}.getType()
+                    );
+                    
+                    if (sequenceDataList == null) {
+                        return new LoadResult(new ArrayList<>(), null, 1.0);
+                    }
+                    
+                    List<ShapeSequence> sequences = convertSequencesFromData(sequenceDataList);
+                    return new LoadResult(sequences, null, 1.0);
+                }
+            }
+        }
+        
+        return new LoadResult(new ArrayList<>(), null, 1.0);
+    }
+    
+    /**
+     * Result class for loading sequences and background image.
+     */
+    public static class LoadResult {
+        private final List<ShapeSequence> sequences;
+        private final String backgroundImagePath;
+        private final double backgroundImageScale;
+        
+        public LoadResult(List<ShapeSequence> sequences, String backgroundImagePath, double backgroundImageScale) {
+            this.sequences = sequences;
+            this.backgroundImagePath = backgroundImagePath;
+            this.backgroundImageScale = backgroundImageScale;
+        }
+        
+        public List<ShapeSequence> getSequences() {
+            return sequences;
+        }
+        
+        public String getBackgroundImagePath() {
+            return backgroundImagePath;
+        }
+        
+        public double getBackgroundImageScale() {
+            return backgroundImageScale;
+        }
+    }
+    
+    /**
+     * Converts SequenceData list to ShapeSequence list.
+     */
+    private List<ShapeSequence> convertSequencesFromData(List<SequenceData> sequenceDataList) {
+        if (sequenceDataList == null) {
+            return new ArrayList<>();
+        }
+        
+        // First pass: create all sequences and shapes, build UUID map
+        Map<UUID, ShapeInstance> idToShapeMap = new HashMap<>();
+        List<ShapeSequence> sequences = new ArrayList<>();
+        
+        for (SequenceData seqData : sequenceDataList) {
+            ShapeSequence sequence = new ShapeSequence(seqData.getName());
+            sequence.setActive(seqData.isActive());
+            sequence.setInvertAlignment(seqData.isInvertAlignment());
+            
+            // Create shapes and build UUID map
+            for (SequenceData.ShapeInstanceData shapeData : seqData.getShapes()) {
+                ShapeInstance shape = createShapeFromData(shapeData);
+                sequence.addShape(shape);
+                idToShapeMap.put(shape.getId(), shape);
             }
             
-            // Second pass: resolve initial alignment references
-            for (int i = 0; i < sequenceDataList.size(); i++) {
-                SequenceData seqData = sequenceDataList.get(i);
-                ShapeSequence sequence = sequences.get(i);
+            sequences.add(sequence);
+        }
+        
+        // Second pass: resolve initial alignment references
+        for (int i = 0; i < sequenceDataList.size(); i++) {
+            SequenceData seqData = sequenceDataList.get(i);
+            ShapeSequence sequence = sequences.get(i);
+            
+            if (seqData.getInitialAlignment() != null) {
+                SequenceData.InitialAlignmentData alignData = seqData.getInitialAlignment();
                 
-                if (seqData.getInitialAlignment() != null) {
-                    SequenceData.InitialAlignmentData alignData = seqData.getInitialAlignment();
-                    
-                    if ("position".equals(alignData.getType())) {
-                        if (alignData.getPosition() != null) {
-                            sequence.setInitialAlignment(alignData.getPosition().toAlignPosition());
-                        }
-                    } else if ("shape".equals(alignData.getType())) {
-                        if (alignData.getShapeId() != null) {
-                            ShapeInstance linkedShape = idToShapeMap.get(alignData.getShapeId());
-                            if (linkedShape != null) {
-                                sequence.setInitialAlignment(linkedShape);
-                            }
+                if ("position".equals(alignData.getType())) {
+                    if (alignData.getPosition() != null) {
+                        sequence.setInitialAlignment(alignData.getPosition().toAlignPosition());
+                    }
+                } else if ("shape".equals(alignData.getType())) {
+                    if (alignData.getShapeId() != null) {
+                        ShapeInstance linkedShape = idToShapeMap.get(alignData.getShapeId());
+                        if (linkedShape != null) {
+                            sequence.setInitialAlignment(linkedShape);
                         }
                     }
                 }
             }
-            
-            return sequences;
         }
+        
+        return sequences;
     }
     
     /**

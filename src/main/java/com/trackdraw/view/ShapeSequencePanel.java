@@ -28,6 +28,7 @@ public class ShapeSequencePanel extends JPanel {
     private Consumer<ShapeSequence> sequenceChangeHandler; // Handler for when active sequence changes
     private java.util.function.Supplier<ShapeSequence> activeSequenceSupplier; // Supplier to get active sequence from MainWindow
     private java.util.function.Supplier<List<ShapeSequence>> allSequencesSupplier; // Supplier to get all sequences from MainWindow
+    private java.util.function.Consumer<String> statusMessageHandler; // Handler to set status messages
     
     public ShapeSequencePanel() {
         this.sequences = new ArrayList<>();
@@ -37,11 +38,12 @@ public class ShapeSequencePanel extends JPanel {
     
     /**
      * Sets a larger font for a button.
+     * Uses a font that supports Unicode characters well.
      * @param button Button to set font for
      */
     private void setButtonFont(JButton button) {
-        Font currentFont = button.getFont();
-        Font largerFont = new Font(currentFont.getName(), currentFont.getStyle(), currentFont.getSize() + 4);
+        // Use a font that supports Unicode well, with larger size
+        Font largerFont = new Font(Font.SANS_SERIF, Font.PLAIN, 16);
         button.setFont(largerFont);
     }
     
@@ -185,6 +187,14 @@ public class ShapeSequencePanel extends JPanel {
     }
     
     /**
+     * Sets the status message handler.
+     * @param handler Consumer that receives status message strings
+     */
+    public void setStatusMessageHandler(java.util.function.Consumer<String> handler) {
+        this.statusMessageHandler = handler;
+    }
+    
+    /**
      * Adds a new sequence with the name from the text field.
      * Sets align position to center of canvas, makes it active and selected.
      */
@@ -233,10 +243,9 @@ public class ShapeSequencePanel extends JPanel {
         // Get active sequence from MainWindow if supplier is available
         ShapeSequence activeSeq = (activeSequenceSupplier != null) ? activeSequenceSupplier.get() : getActiveSequence();
         if (activeSeq == null || activeSeq.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                "No active sequence with shapes found.",
-                "No Active Shape",
-                JOptionPane.WARNING_MESSAGE);
+            if (statusMessageHandler != null) {
+                statusMessageHandler.accept("No active sequence with shapes found");
+            }
             return;
         }
         
@@ -250,19 +259,17 @@ public class ShapeSequencePanel extends JPanel {
         }
         
         if (activeShape == null) {
-            JOptionPane.showMessageDialog(this,
-                "No active shape found in the active sequence. Please select a shape first.",
-                "No Active Shape",
-                JOptionPane.WARNING_MESSAGE);
+            if (statusMessageHandler != null) {
+                statusMessageHandler.accept("No active shape found. Please select a shape first");
+            }
             return;
         }
         
         // Check if shape has align position set (it should if it's been drawn)
         if (activeShape.getAlignPosition() == null) {
-            JOptionPane.showMessageDialog(this,
-                "Selected shape has not been positioned yet. Please draw the sequence first.",
-                "Shape Not Positioned",
-                JOptionPane.WARNING_MESSAGE);
+            if (statusMessageHandler != null) {
+                statusMessageHandler.accept("Selected shape has not been positioned yet. Please draw the sequence first");
+            }
             return;
         }
         
@@ -274,10 +281,9 @@ public class ShapeSequencePanel extends JPanel {
         dummyG2d.dispose();
         
         if (nextPosition == null) {
-            JOptionPane.showMessageDialog(this,
-                "Cannot calculate next alignment position from selected shape.",
-                "Alignment Error",
-                JOptionPane.WARNING_MESSAGE);
+            if (statusMessageHandler != null) {
+                statusMessageHandler.accept("Cannot calculate next alignment position from selected shape");
+            }
             return;
         }
         
@@ -330,10 +336,9 @@ public class ShapeSequencePanel extends JPanel {
         ShapeSequence seqToDelete = getActiveSequence();
         
         if (seqToDelete == null) {
-            JOptionPane.showMessageDialog(this,
-                "No active sequence to delete.",
-                "No Active Sequence",
-                JOptionPane.WARNING_MESSAGE);
+            if (statusMessageHandler != null) {
+                statusMessageHandler.accept("No active sequence to delete");
+            }
             return;
         }
         
@@ -368,10 +373,9 @@ public class ShapeSequencePanel extends JPanel {
         }
         
         if (hasLinks) {
-            JOptionPane.showMessageDialog(this,
-                "Cannot delete sequence: other sequences are linked to shapes in this sequence.",
-                "Cannot Delete",
-                JOptionPane.WARNING_MESSAGE);
+            if (statusMessageHandler != null) {
+                statusMessageHandler.accept("Cannot delete sequence: other sequences are linked to shapes in this sequence");
+            }
             return;
         }
         
