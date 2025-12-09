@@ -1,17 +1,30 @@
 package com.trackdraw.validation;
 
+import com.trackdraw.config.AllowedCombinationsLoader;
 import com.trackdraw.model.HalfCircle;
 import com.trackdraw.model.ShapeInstance;
 import com.trackdraw.model.ShapeSequence;
 
-import java.util.Arrays;
-import java.util.HashSet;
+import java.io.IOException;
 import java.util.Set;
 
 /**
  * Validates shape sequence operations according to business rules.
  */
 public class SequenceValidator {
+    private static AllowedCombinationsLoader combinationsLoader;
+    
+    static {
+        try {
+            combinationsLoader = new AllowedCombinationsLoader();
+            combinationsLoader.load();
+        } catch (IOException e) {
+            System.err.println("Failed to load allowed combinations: " + e.getMessage());
+            e.printStackTrace();
+            // Fallback to empty loader (will allow all combinations)
+            combinationsLoader = new AllowedCombinationsLoader();
+        }
+    }
     
     /**
      * Validates if a shape can be added to a sequence.
@@ -101,21 +114,22 @@ public class SequenceValidator {
             
             if (!isAllowedPair(key1, key2)) {
                 // Determine which shape has restrictions to provide better error message
-                if ("05".equals(key1)) {
+                Set<String> allowedFor1 = getAllowedPartners(key1);
+                Set<String> allowedFor2 = getAllowedPartners(key2);
+                
+                if (!allowedFor1.isEmpty()) {
                     return ValidationResult.invalid(
-                        String.format("Shape 05 can only be paired with: 05, 10, 15, 20, 25, 30, L (found: %s)", key2)
+                        String.format("Shape %s can only be paired with: %s (found: %s)", 
+                            key1, String.join(", ", allowedFor1), key2)
                     );
-                } else if ("05".equals(key2)) {
+                } else if (!allowedFor2.isEmpty()) {
                     return ValidationResult.invalid(
-                        String.format("Shape 05 can only be paired with: 05, 10, 15, 20, 25, 30, L (found: %s)", key1)
+                        String.format("Shape %s can only be paired with: %s (found: %s)", 
+                            key2, String.join(", ", allowedFor2), key1)
                     );
-                } else if ("10".equals(key1)) {
+                } else {
                     return ValidationResult.invalid(
-                        String.format("Shape 10 can only be paired with: 05, 10, 15 (found: %s)", key2)
-                    );
-                } else if ("10".equals(key2)) {
-                    return ValidationResult.invalid(
-                        String.format("Shape 10 can only be paired with: 05, 10, 15 (found: %s)", key1)
+                        String.format("Shapes %s and %s cannot be paired", key1, key2)
                     );
                 }
             }
@@ -131,9 +145,7 @@ public class SequenceValidator {
      * @return true if this pair allows same orientation
      */
     private static boolean isExceptionPair(String key1, String key2) {
-        // Exception pairs: 05 + L|30|25 (order doesn't matter)
-        return ("05".equals(key1) && (key2.equals("L") || key2.equals("30") || key2.equals("25"))) ||
-               ("05".equals(key2) && (key1.equals("L") || key1.equals("30") || key1.equals("25")));
+        return combinationsLoader.isExceptionPair(key1, key2);
     }
     
     /**
@@ -143,26 +155,16 @@ public class SequenceValidator {
      * @return true if this pair is allowed
      */
     private static boolean isAllowedPair(String key1, String key2) {
-        // 05 can pair with: 05, 10, 15, 20, 25, 30, L
-        Set<String> allowedFor05 = new HashSet<>(Arrays.asList("05", "10", "15", "20", "25", "30", "L"));
-        if ("05".equals(key1)) {
-            return allowedFor05.contains(key2);
-        }
-        if ("05".equals(key2)) {
-            return allowedFor05.contains(key1);
-        }
-        
-        // 10 can pair with: 05, 10, 15
-        Set<String> allowedFor10 = new HashSet<>(Arrays.asList("05", "10", "15"));
-        if ("10".equals(key1)) {
-            return allowedFor10.contains(key2);
-        }
-        if ("10".equals(key2)) {
-            return allowedFor10.contains(key1);
-        }
-        
-        // Other shapes: no restrictions
-        return true;
+        return combinationsLoader.isAllowedPair(key1, key2);
+    }
+    
+    /**
+     * Gets allowed partners for a shape (for error messages).
+     * @param shapeKey The shape key
+     * @return Set of allowed partner keys
+     */
+    private static Set<String> getAllowedPartners(String shapeKey) {
+        return combinationsLoader.getAllowedPartners(shapeKey);
     }
     
     /**

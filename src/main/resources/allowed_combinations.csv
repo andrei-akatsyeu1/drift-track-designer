@@ -1,0 +1,11 @@
+shape1,shape2,allows_same_orientation
+05,05,false
+05,10,false
+05,15,false
+05,20,false
+05,25,true
+05,30,true
+05,L,true
+10,10,false
+10,15,false
+
