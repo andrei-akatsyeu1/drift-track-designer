@@ -301,7 +301,9 @@ public class ShapeSequence {
     
     /**
      * Recalculates color flags (isRed) for all shapes in this sequence.
-     * If this sequence is linked to another shape, starts from opposite color of linked shape.
+     * If this sequence is linked to another shape:
+     *   - When invertAlignment is true: first shape should be opposite to linked shape
+     *   - When invertAlignment is false: first shape has same color as linked shape
      * Otherwise, starts from white (false) and alternates.
      * Each shape's color is calculated based on the previous shape's effective color (after inversion).
      */
@@ -327,8 +329,22 @@ public class ShapeSequence {
         for (int i = 0; i < shapes.size(); i++) {
             ShapeInstance shape = shapes.get(i);
             if (shape != null) {
-                // Calculate base color: alternate from previous effective color
-                boolean baseRed = !previousEffectiveRed;
+                boolean baseRed;
+                if (i == 0 && linkedShape != null) {
+                    // First shape of linked sequence
+                    if (invertAlignment) {
+                        // When invertAlignment is true: first shape should be opposite to linked shape
+                        // previousEffectiveRed is already opposite to linked shape, so use it directly
+                        baseRed = previousEffectiveRed;
+                    } else {
+                        // When invertAlignment is false: first shape has same color as linked shape
+                        // previousEffectiveRed is opposite, so invert it to get same as linked shape
+                        baseRed = !previousEffectiveRed;
+                    }
+                } else {
+                    // Subsequent shapes: alternate from previous effective color
+                    baseRed = !previousEffectiveRed;
+                }
                 shape.setRed(baseRed);
                 
                 // Update previous effective color for next iteration
