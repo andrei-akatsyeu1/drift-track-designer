@@ -24,7 +24,15 @@ public class DrawingPanel extends JPanel {
     private String backgroundImagePath;
     private double backgroundImageScale = 1.0; // Default scale
     private MeasurementTool measurementTool = new MeasurementTool();
+    private boolean showKeys = false; // Whether to show shape keys
     private java.util.function.Consumer<String> statusMessageHandler; // Handler to set status messages
+    
+    // Pan offset for canvas dragging
+    private double panX = 0.0;
+    private double panY = 0.0;
+    private int lastMouseX = 0;
+    private int lastMouseY = 0;
+    private boolean isPanning = false;
     
     public DrawingPanel() {
         setBackground(Color.WHITE);
@@ -34,12 +42,42 @@ public class DrawingPanel extends JPanel {
         // Request focus when clicked so keyboard controls work
         addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
-            public void mouseClicked(java.awt.event.MouseEvent e) {
+            public void mousePressed(java.awt.event.MouseEvent e) {
                 requestFocusInWindow();
                 
-                // Handle measurement tool clicks
+                // Start panning if left mouse button and measurement tool is not active
+                if (e.getButton() == java.awt.event.MouseEvent.BUTTON1 && !measurementTool.isActive()) {
+                    isPanning = true;
+                    lastMouseX = e.getX();
+                    lastMouseY = e.getY();
+                }
+                
+                // Handle measurement tool clicks (account for pan offset)
                 if (measurementTool.isActive()) {
-                    measurementTool.handleClick(e.getX(), e.getY());
+                    // Adjust click coordinates for pan offset
+                    double adjustedX = e.getX() - panX;
+                    double adjustedY = e.getY() - panY;
+                    measurementTool.handleClick((int)adjustedX, (int)adjustedY);
+                    repaint();
+                }
+            }
+            
+            @Override
+            public void mouseReleased(java.awt.event.MouseEvent e) {
+                // Stop panning
+                if (e.getButton() == java.awt.event.MouseEvent.BUTTON1) {
+                    isPanning = false;
+                }
+            }
+            
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                // Only handle click if not panning (to avoid triggering click after drag)
+                if (!isPanning && measurementTool.isActive()) {
+                    // Adjust click coordinates for pan offset
+                    double adjustedX = e.getX() - panX;
+                    double adjustedY = e.getY() - panY;
+                    measurementTool.handleClick((int)adjustedX, (int)adjustedY);
                     repaint();
                 }
             }
@@ -48,8 +86,36 @@ public class DrawingPanel extends JPanel {
         // Setup keyboard bindings for Esc key to disable measurement tool
         setupMeasurementKeyboardControls();
         
-        // Handle mouse movement for measurement preview
+        // Setup mouse wheel for global scale
+        setupMouseWheelForGlobalScale();
+        
+        // Handle mouse movement for measurement preview and panning
         addMouseMotionListener(new java.awt.event.MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(java.awt.event.MouseEvent e) {
+                if (isPanning) {
+                    // Calculate pan delta
+                    int deltaX = e.getX() - lastMouseX;
+                    int deltaY = e.getY() - lastMouseY;
+                    
+                    // Update pan offset
+                    panX += deltaX;
+                    panY += deltaY;
+                    
+                    // Update last mouse position
+                    lastMouseX = e.getX();
+                    lastMouseY = e.getY();
+                    
+                    repaint();
+                } else if (measurementTool.isActive() && measurementTool.isMeasuring()) {
+                    // Adjust mouse move coordinates for pan offset
+                    double adjustedX = e.getX() - panX;
+                    double adjustedY = e.getY() - panY;
+                    measurementTool.handleMouseMove((int)adjustedX, (int)adjustedY);
+                    repaint();
+                }
+            }
+            
             @Override
             public void mouseMoved(java.awt.event.MouseEvent e) {
                 if (measurementTool.isActive() && measurementTool.isMeasuring()) {
@@ -155,6 +221,9 @@ public class DrawingPanel extends JPanel {
         // Enable anti-aliasing for smoother shapes
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
+        // Apply pan offset (translate the entire canvas)
+        g2d.translate(panX, panY);
+        
         // Use (0,0) as reference point for all scaling
         // This ensures image and sequences maintain relative positions on scale change and window resize
         double currentScale = GlobalScale.getScale();
@@ -232,8 +301,11 @@ public class DrawingPanel extends JPanel {
             }
             
             // Draw the sequence
-            sequence.drawAll(g2d, initialAlignPosition);
+            sequence.drawAll(g2d, initialAlignPosition, showKeys);
         }
+        
+        // Reset transform before drawing measurement tool (measurement is in screen coordinates)
+        g2d.setTransform(new java.awt.geom.AffineTransform());
         
         // Draw measurement tool if active
         if (measurementTool.isActive()) {
@@ -308,6 +380,22 @@ public class DrawingPanel extends JPanel {
     }
     
     /**
+     * Sets whether to show shape keys on the canvas.
+     * @param showKeys true to show keys, false to hide them
+     */
+    public void setShowKeys(boolean showKeys) {
+        this.showKeys = showKeys;
+    }
+    
+    /**
+     * Gets whether shape keys are shown on the canvas.
+     * @return true if keys are shown, false otherwise
+     */
+    public boolean isShowKeys() {
+        return showKeys;
+    }
+    
+    /**
      * Sets up keyboard controls for the measurement tool.
      * Esc key disables the measurement tool.
      */
@@ -327,6 +415,44 @@ public class DrawingPanel extends JPanel {
                         measurementDeactivatedCallback.run();
                     }
                 }
+            }
+        });
+    }
+    
+    /**
+     * Sets up mouse wheel for global scale adjustment.
+     * Mouse wheel up increases scale, mouse wheel down decreases scale.
+     */
+    private void setupMouseWheelForGlobalScale() {
+        addMouseWheelListener(new java.awt.event.MouseWheelListener() {
+            @Override
+            public void mouseWheelMoved(java.awt.event.MouseWheelEvent e) {
+                // Only handle if measurement tool is not active
+                if (measurementTool.isActive()) {
+                    return;
+                }
+                
+                int rotation = e.getWheelRotation();
+                double delta;
+                
+                // Check if Ctrl is pressed for 1% increments, otherwise 10%
+                boolean ctrlPressed = (e.getModifiersEx() & java.awt.event.InputEvent.CTRL_DOWN_MASK) != 0;
+                if (ctrlPressed) {
+                    delta = rotation > 0 ? -0.01 : 0.01; // 1% per notch
+                } else {
+                    delta = rotation > 0 ? -0.1 : 0.1; // 10% per notch
+                }
+                
+                // Change global scale
+                double currentScale = GlobalScale.getScale();
+                double newScale = currentScale + delta;
+                
+                // Clamp to reasonable range
+                if (newScale < 0.1) newScale = 0.1;
+                if (newScale > 10.0) newScale = 10.0;
+                
+                GlobalScale.setScale(newScale);
+                repaint();
             }
         });
     }

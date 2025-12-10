@@ -414,9 +414,10 @@ public class ShapeSequence {
      * Colors are calculated based on color flags, active sequence, and active shape.
      * @param g2d Graphics2D context to draw on
      * @param initialAlignPosition The initial alignment position for the first shape
+     * @param showKeys Whether to show shape keys on the canvas
      * @return The final alignment position after drawing all shapes
      */
-    public AlignPosition drawAll(Graphics2D g2d, AlignPosition initialAlignPosition) {
+    public AlignPosition drawAll(Graphics2D g2d, AlignPosition initialAlignPosition, boolean showKeys) {
         if (shapes.isEmpty()) {
             return initialAlignPosition;
         }
@@ -436,6 +437,9 @@ public class ShapeSequence {
             
             // Draw the shape and get the next align position
             currentAlignPosition = shape.draw(g2d);
+            
+            // Draw the shape's key text if enabled
+            shape.drawText(g2d, showKeys);
         }
         
         return currentAlignPosition;

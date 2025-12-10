@@ -271,19 +271,19 @@ When you create a sequence from a shape:
 
 | Shortcut | Action |
 |----------|--------|
-| `Page Up` | Increase scale by 10% |
-| `Page Down` | Decrease scale by 10% |
-| `Ctrl + Page Up` | Increase scale by 1% |
-| `Ctrl + Page Down` | Decrease scale by 1% |
+| `Mouse Wheel Up` | Increase scale by 10% |
+| `Mouse Wheel Down` | Decrease scale by 10% |
+| `Ctrl + Mouse Wheel Up` | Increase scale by 1% |
+| `Ctrl + Mouse Wheel Down` | Decrease scale by 1% |
 
 ### Background Image Scale
 
 | Shortcut | Action |
 |----------|--------|
-| `Shift + Page Up` | Increase image scale by 10% |
-| `Shift + Page Down` | Decrease image scale by 10% |
-| `Shift + Ctrl + Page Up` | Increase image scale by 1% |
-| `Shift + Ctrl + Page Down` | Decrease image scale by 1% |
+| `Page Up` | Increase image scale by 10% |
+| `Page Down` | Decrease image scale by 10% |
+| `Ctrl + Page Up` | Increase image scale by 1% |
+| `Ctrl + Page Down` | Decrease image scale by 1% |
 
 ### Measurement Tool
 
@@ -340,7 +340,7 @@ When you create a sequence from a shape:
 
 **Image Scale**:
 - Use the image scale control in the top panel
-- Or use keyboard shortcuts: `Shift + Page Up/Down`
+- Or use keyboard shortcuts: `Page Up/Down` (10%) or `Ctrl + Page Up/Down` (1%)
 
 ## Advanced Features
 

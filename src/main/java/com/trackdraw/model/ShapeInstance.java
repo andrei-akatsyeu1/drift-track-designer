@@ -238,5 +238,52 @@ public abstract class ShapeInstance {
      * @return AlignPosition for the next shape
      */
     protected abstract AlignPosition calculateNextAlignPosition();
+    
+    /**
+     * Draws the shape's key text offset from the align position.
+     * Text is always horizontal.
+     * Text color: black for white shapes (effectiveIsRed = false), white for red shapes (effectiveIsRed = true).
+     * 
+     * @param g2d Graphics2D context to draw on
+     * @param showKeys Whether to show the key text
+     */
+    public void drawText(Graphics2D g2d, boolean showKeys) {
+        if (!showKeys || key == null || key.isEmpty()) {
+            return;
+        }
+        
+        // Get align position
+        if (alignPosition == null) {
+            return;
+        }
+        
+        // Position text between align position and next align position (center of shape)
+        AlignPosition nextAlignPos = calculateNextAlignPosition();
+        double textX = (alignPosition.getX() + nextAlignPos.getX()) / 2.0;
+        double textY = (alignPosition.getY() + nextAlignPos.getY()) / 2.0;
+        
+        // Set font (smaller size)
+        java.awt.Font originalFont = g2d.getFont();
+        java.awt.Font textFont = new java.awt.Font(originalFont.getName(), java.awt.Font.BOLD, 10);
+        g2d.setFont(textFont);
+        
+        // Set text color based on effectiveIsRed
+        // White text color when getEffectiveIsRed() == true
+        // Black text color when getEffectiveIsRed() == false
+        boolean effectiveRed = getEffectiveIsRed();
+        if (effectiveRed) {
+            g2d.setColor(Color.WHITE);
+        } else {
+            g2d.setColor(Color.BLACK);
+        }
+        
+        // Draw text centered at position (always horizontal, no rotation)
+        java.awt.FontMetrics fm = g2d.getFontMetrics();
+        int textWidth = fm.stringWidth(key);
+        // Center text: X is textX - textWidth/2, Y is adjusted so text is centered vertically
+        // drawString Y is baseline, so we use (ascent - descent) / 2 to center
+        int textHeight = fm.getAscent() - fm.getDescent();
+        g2d.drawString(key, (int)(textX - textWidth / 2), (int)(textY + textHeight / 2));
+    }
 }
 

@@ -101,5 +101,11 @@ public class HalfCircle extends ShapeInstance {
         // The next shape (if any) will align to the same point
         return new AlignPosition(alignPosition.getX(), alignPosition.getY(), alignPosition.getAngle());
     }
+    
+    @Override
+    public void drawText(Graphics2D g2d, boolean showKeys) {
+        // Do not show text on HalfCircle
+        // Override to do nothing
+    }
 }
 

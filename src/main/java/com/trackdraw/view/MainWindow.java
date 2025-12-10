@@ -22,6 +22,7 @@ public class MainWindow extends JFrame {
     private ScaleControlPanel scaleControlPanel;
     private BackgroundImageScalePanel backgroundImageScalePanel;
     private JCheckBox measureCheckBox;
+    private JCheckBox showKeysCheckBox;
     private ShapePalettePanel shapePalettePanel;
     private ShapeSequencePanel shapeSequencePanel;
     private ShapeListPanel shapeListPanel;
@@ -95,6 +96,16 @@ public class MainWindow extends JFrame {
             drawingPanel.repaint();
         });
         topPanel.add(measureCheckBox);
+        
+        // Show keys checkbox
+        showKeysCheckBox = new JCheckBox("Show Keys");
+        showKeysCheckBox.setToolTipText("Show shape keys on canvas");
+        showKeysCheckBox.addActionListener(e -> {
+            boolean showKeys = showKeysCheckBox.isSelected();
+            drawingPanel.setShowKeys(showKeys);
+            drawingPanel.repaint();
+        });
+        topPanel.add(showKeysCheckBox);
         
         // Help button with keyboard shortcuts tooltip
         JButton helpButton = new JButton("?");
@@ -456,21 +467,16 @@ public class MainWindow extends JFrame {
     
     /**
      * Sets up keyboard bindings for scale controls.
-     * Global scale: Page Up/Down (10%), Page Up/Down + Ctrl (1%)
-     * Image scale: Shift + Page Up/Down (10%), Shift + Page Up/Down + Ctrl (1%)
+     * Global scale: Mouse wheel (handled in DrawingPanel)
+     * Image scale: Page Up/Down (10%), Page Up/Down + Ctrl (1%)
      */
     private void setupScaleKeyboardBindings() {
-        // Set keyboard target to drawing panel
-        scaleControlPanel.getScaleControl().setKeyboardTarget(drawingPanel);
+        // Set keyboard target to drawing panel for image scale only
         backgroundImageScalePanel.getScaleControl().setKeyboardTarget(drawingPanel);
         
-        // Global scale: Page Up/Down (10%), Page Up/Down + Ctrl (1%)
-        scaleControlPanel.getScaleControl().bindKeyboardKeys(KeyEvent.VK_PAGE_UP, false, 0.1);
-        scaleControlPanel.getScaleControl().bindKeyboardKeys(KeyEvent.VK_PAGE_DOWN, false, -0.1);
-        
-        // Image scale: Shift + Page Up/Down (10%), Shift + Page Up/Down + Ctrl (1%)
-        backgroundImageScalePanel.getScaleControl().bindKeyboardKeys(KeyEvent.VK_PAGE_UP, true, 0.1);
-        backgroundImageScalePanel.getScaleControl().bindKeyboardKeys(KeyEvent.VK_PAGE_DOWN, true, -0.1);
+        // Image scale: Page Up/Down (10%), Page Up/Down + Ctrl (1%)
+        backgroundImageScalePanel.getScaleControl().bindKeyboardKeys(KeyEvent.VK_PAGE_UP, false, 0.1);
+        backgroundImageScalePanel.getScaleControl().bindKeyboardKeys(KeyEvent.VK_PAGE_DOWN, false, -0.1);
     }
     
     /**
