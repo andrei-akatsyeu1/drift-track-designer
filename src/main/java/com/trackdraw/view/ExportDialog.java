@@ -26,8 +26,8 @@ public class ExportDialog extends JDialog {
         showKeyCheckBox = new JCheckBox("Show Shape Keys", true);
         shapesReportCheckBox = new JCheckBox("Include Shapes Report", false);
         
-        // Scale spinner: 1 to 10, default 1
-        SpinnerNumberModel scaleModel = new SpinnerNumberModel(1, 1, 10, 1);
+        // Scale spinner: 1 to 10, default 5
+        SpinnerNumberModel scaleModel = new SpinnerNumberModel(5, 1, 10, 1);
         scaleSpinner = new JSpinner(scaleModel);
     }
     

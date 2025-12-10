@@ -53,14 +53,6 @@ public class DrawingPanel extends JPanel {
                     lastMouseY = e.getY();
                 }
                 
-                // Handle measurement tool clicks (account for pan offset)
-                if (measurementTool.isActive()) {
-                    // Adjust click coordinates for pan offset
-                    double adjustedX = e.getX() - panX;
-                    double adjustedY = e.getY() - panY;
-                    measurementTool.handleClick((int)adjustedX, (int)adjustedY);
-                    repaint();
-                }
             }
             
             @Override
@@ -75,10 +67,10 @@ public class DrawingPanel extends JPanel {
             public void mouseClicked(java.awt.event.MouseEvent e) {
                 // Only handle click if not panning (to avoid triggering click after drag)
                 if (!isPanning && measurementTool.isActive()) {
-                    // Adjust click coordinates for pan offset
-                    double adjustedX = e.getX() - panX;
-                    double adjustedY = e.getY() - panY;
-                    measurementTool.handleClick((int)adjustedX, (int)adjustedY);
+                    // Convert screen coordinates to world coordinates (subtract pan offset)
+                    double worldX = e.getX() - panX;
+                    double worldY = e.getY() - panY;
+                    measurementTool.handleClick(worldX, worldY);
                     repaint();
                 }
             }
@@ -108,19 +100,16 @@ public class DrawingPanel extends JPanel {
                     lastMouseY = e.getY();
                     
                     repaint();
-                } else if (measurementTool.isActive() && measurementTool.isMeasuring()) {
-                    // Adjust mouse move coordinates for pan offset
-                    double adjustedX = e.getX() - panX;
-                    double adjustedY = e.getY() - panY;
-                    measurementTool.handleMouseMove((int)adjustedX, (int)adjustedY);
-                    repaint();
                 }
             }
             
             @Override
             public void mouseMoved(java.awt.event.MouseEvent e) {
                 if (measurementTool.isActive() && measurementTool.isMeasuring()) {
-                    measurementTool.handleMouseMove(e.getX(), e.getY());
+                    // Convert screen coordinates to world coordinates (subtract pan offset)
+                    double worldX = e.getX() - panX;
+                    double worldY = e.getY() - panY;
+                    measurementTool.handleMouseMove(worldX, worldY);
                     repaint();
                 }
             }
@@ -305,16 +294,16 @@ public class DrawingPanel extends JPanel {
             sequence.drawAll(g2d, initialAlignPosition, showKeys);
         }
         
-        // Reset transform before drawing measurement tool (measurement is in screen coordinates)
-        g2d.setTransform(new java.awt.geom.AffineTransform());
-        
-        // Draw measurement tool if active
+        // Draw measurement tool if active (keep pan transform active to match shapes)
         if (measurementTool.isActive()) {
             Point2D.Double start = measurementTool.getStartPoint();
             Point2D.Double end = measurementTool.getEndPoint();
             
             if (start != null && end != null) {
-                // Draw measurement line
+                // Measurement tool stores world coordinates (screen - pan)
+                // Since pan transform is still active, draw directly at world coordinates
+                
+                // Draw measurement line (in world coordinates, pan transform will apply)
                 g2d.setColor(Color.BLUE);
                 g2d.setStroke(new BasicStroke(1.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND, 0, new float[]{5, 5}, 0));
                 g2d.draw(new Line2D.Double(start.x, start.y, end.x, end.y));
@@ -330,7 +319,7 @@ public class DrawingPanel extends JPanel {
                     double distanceScaled = measurementTool.getDistanceScaled();
                     String label = String.format("%.1f", distanceScaled);
                     
-                    // Position label at midpoint of line
+                    // Position label at midpoint of line (in world coordinates)
                     double midX = (start.x + end.x) / 2;
                     double midY = (start.y + end.y) / 2;
                     

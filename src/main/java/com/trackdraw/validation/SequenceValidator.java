@@ -27,22 +27,25 @@ public class SequenceValidator {
     }
     
     /**
-     * Validates if a shape can be added to a sequence.
+     * Validates if a shape can be added to a sequence at the specified index.
      * Rule: E (HalfCircle) is the end of sequence, nothing can be added after it.
      * 
      * @param sequence The sequence to add to
      * @param newShape The shape to add
+     * @param insertIndex The index where the shape will be inserted
      * @return ValidationResult with isValid flag and error message if invalid
      */
-    public static ValidationResult validateAddShape(ShapeSequence sequence, ShapeInstance newShape) {
+    public static ValidationResult validateAddShape(ShapeSequence sequence, ShapeInstance newShape, int insertIndex) {
         if (sequence == null || newShape == null) {
             return ValidationResult.invalid("Sequence or shape is null");
         }
         
-        // Check if sequence already ends with E (HalfCircle)
-        if (!sequence.isEmpty()) {
-            ShapeInstance lastShape = sequence.getShapes().get(sequence.size() - 1);
-            if (lastShape instanceof HalfCircle) {
+        // Check if we're trying to insert after a HalfCircle
+        // The shape before the insertion point (at index insertIndex - 1) is the one we're inserting after
+        // Note: insertIndex is already validated in insertShape method
+        if (insertIndex > 0) {
+            ShapeInstance shapeBeforeInsertion = sequence.getShapes().get(insertIndex - 1);
+            if (shapeBeforeInsertion instanceof HalfCircle) {
                 return ValidationResult.invalid("Cannot add shapes after E (HalfCircle) - it is the end of sequence");
             }
         }

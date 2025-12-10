@@ -4,6 +4,7 @@ import com.trackdraw.config.ShapeConfig;
 import com.trackdraw.model.ShapeInstance;
 import com.trackdraw.model.AnnularSector;
 import com.trackdraw.model.Rectangle;
+import com.trackdraw.model.HalfCircle;
 
 import javax.swing.*;
 import java.awt.*;
@@ -104,7 +105,7 @@ public class ShapePalettePanel extends JPanel {
      */
     private void setButtonFont(JButton button) {
         // Use a font that supports Unicode well, with larger size
-        Font largerFont = new Font(Font.SANS_SERIF, Font.PLAIN, 16);
+        Font largerFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
         button.setFont(largerFont);
     }
     
@@ -121,8 +122,9 @@ public class ShapePalettePanel extends JPanel {
         button.setPreferredSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         button.setMinimumSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
         button.setMaximumSize(new Dimension(BUTTON_WIDTH, BUTTON_HEIGHT));
-        // Set font before setting size to ensure text fits properly
-        setButtonFont(button);
+        // Set font for shape key buttons (smaller than other buttons)
+        Font shapeButtonFont = new Font(Font.SANS_SERIF, Font.PLAIN, 16);
+        button.setFont(shapeButtonFont);
         // Ensure text is not clipped - set horizontal and vertical text position
         button.setHorizontalTextPosition(SwingConstants.CENTER);
         button.setVerticalTextPosition(SwingConstants.CENTER);
@@ -164,6 +166,10 @@ public class ShapePalettePanel extends JPanel {
                 palettePanel2.add(button2);
             } else if (shape instanceof Rectangle) {
                 // Add rectangles to palette 1 only (orientation = 1)
+                JButton button = createFixedSizeButton(key, key, 1);
+                palettePanel1.add(button);
+            } else if (shape instanceof HalfCircle) {
+                // Add half-circles to palette 1 only (orientation = 1)
                 JButton button = createFixedSizeButton(key, key, 1);
                 palettePanel1.add(button);
             }

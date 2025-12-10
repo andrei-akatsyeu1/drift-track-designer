@@ -88,7 +88,7 @@ public class MainWindow extends JFrame {
         
         // Measurement tool checkbox
         measureCheckBox = new JCheckBox("📏");
-        Font measureFont = new Font(Font.SANS_SERIF, Font.PLAIN, 16);
+        Font measureFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
         measureCheckBox.setFont(measureFont);
         measureCheckBox.setToolTipText("Measurement Tool");
         measureCheckBox.addActionListener(e -> {
@@ -149,7 +149,7 @@ public class MainWindow extends JFrame {
         // Clear button
         JButton clearButton = new JButton("🗑");
         // Use a font that supports Unicode well, with larger size
-        Font largerFont = new Font(Font.SANS_SERIF, Font.PLAIN, 16);
+        Font largerFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
         clearButton.setFont(largerFont);
         clearButton.setToolTipText("Clear active sequence");
         clearButton.addActionListener(e -> sequenceController.clearSequence());
@@ -568,7 +568,7 @@ public class MainWindow extends JFrame {
         
         JTextArea textArea = new JTextArea(reportText);
         textArea.setEditable(false);
-        textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        textArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 16));
         textArea.setBackground(Color.WHITE);
         
         JScrollPane scrollPane = new JScrollPane(textArea);
@@ -596,6 +596,18 @@ public class MainWindow extends JFrame {
         SwingUtilities.invokeLater(() -> {
             try {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                
+                // Set larger default fonts for UI components
+                Font defaultFont = new Font(Font.SANS_SERIF, Font.PLAIN, 16);
+                UIManager.put("Label.font", defaultFont);
+                UIManager.put("Button.font", defaultFont);
+                UIManager.put("TextField.font", defaultFont);
+                UIManager.put("TextArea.font", defaultFont);
+                UIManager.put("List.font", defaultFont);
+                UIManager.put("CheckBox.font", defaultFont);
+                UIManager.put("Menu.font", defaultFont);
+                UIManager.put("MenuItem.font", defaultFont);
+                UIManager.put("CheckBoxMenuItem.font", defaultFont);
             } catch (Exception e) {
                 e.printStackTrace();
             }

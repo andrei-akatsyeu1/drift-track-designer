@@ -39,6 +39,7 @@ public class ScaleControl extends JPanel {
     private void initializeComponents() {
         scaleField = new JTextField(6);
         scaleField.setEditable(false);
+        scaleField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 16));
     }
     
     private void setupLayout() {
@@ -72,7 +73,7 @@ public class ScaleControl extends JPanel {
      */
     private void setButtonFont(JButton button) {
         // Use a font that supports Unicode well, with larger size
-        Font largerFont = new Font(Font.SANS_SERIF, Font.PLAIN, 16);
+        Font largerFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
         button.setFont(largerFont);
     }
     

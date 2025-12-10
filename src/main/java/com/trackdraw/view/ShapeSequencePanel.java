@@ -43,7 +43,7 @@ public class ShapeSequencePanel extends JPanel {
      */
     private void setButtonFont(JButton button) {
         // Use a font that supports Unicode well, with larger size
-        Font largerFont = new Font(Font.SANS_SERIF, Font.PLAIN, 16);
+        Font largerFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
         button.setFont(largerFont);
     }
     
