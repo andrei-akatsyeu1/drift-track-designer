@@ -218,62 +218,77 @@ public class ShapeReportGenerator {
         }
         
         /**
-         * Formats the report as a string.
+         * Formats the report as a string in table format (matching image export format).
          */
         public String formatReport() {
             StringBuilder sb = new StringBuilder();
-            sb.append("Shape Usage Report\n");
-            sb.append("==================\n\n");
             
-            // Complex shapes
-            if (!complexShapes.isEmpty()) {
-                sb.append("Complex Shapes:\n");
-                List<ComplexShape> sortedComplex = new ArrayList<>(complexShapes.keySet());
-                sortedComplex.sort(Comparator.comparing(ComplexShape::toString));
+            // Build combined counts from regular shapes
+            Map<String, Integer> redCounts = new HashMap<>(regularShapesRed);
+            Map<String, Integer> whiteCounts = new HashMap<>(regularShapesWhite);
+            
+            // Add complex shapes to the counts
+            // Complex shapes are counted as regular shapes in the table format
+            for (Map.Entry<ComplexShape, Integer> entry : complexShapes.entrySet()) {
+                ComplexShape complex = entry.getKey();
+                int count = entry.getValue();
                 
-                for (ComplexShape complex : sortedComplex) {
-                    int count = complexShapes.get(complex);
-                    sb.append(String.format("  %s: %d\n", complex.toString(), count));
+                // Format complex shape as "key1+key2" for display
+                String complexKey = complex.getShapeKey1() + "+" + complex.getShapeKey2();
+                
+                if (complex.isRed()) {
+                    redCounts.put(complexKey, redCounts.getOrDefault(complexKey, 0) + count);
+                } else {
+                    whiteCounts.put(complexKey, whiteCounts.getOrDefault(complexKey, 0) + count);
                 }
-                sb.append("\n");
             }
             
-            // Regular shapes - white
-            if (!regularShapesWhite.isEmpty()) {
-                sb.append("Regular Shapes (White):\n");
-                List<String> sortedKeys = new ArrayList<>(regularShapesWhite.keySet());
-                Collections.sort(sortedKeys);
+            // Collect all unique keys (sorted)
+            Set<String> allKeys = new TreeSet<>();
+            allKeys.addAll(redCounts.keySet());
+            allKeys.addAll(whiteCounts.keySet());
+            
+            // Title
+            sb.append("Shapes Report:\n\n");
+            
+            // Table header
+            sb.append(String.format("%-15s %-8s %-8s\n", "Key", "Red", "White"));
+            sb.append("----------------------------------------\n");
+            
+            // Table rows
+            int totalRed = 0;
+            int totalWhite = 0;
+            
+            for (String key : allKeys) {
+                int redCount = redCounts.getOrDefault(key, 0);
+                int whiteCount = whiteCounts.getOrDefault(key, 0);
                 
-                for (String key : sortedKeys) {
-                    int count = regularShapesWhite.get(key);
-                    sb.append(String.format("  %s: %d\n", key, count));
+                // Skip rows with zero counts in both columns
+                if (redCount == 0 && whiteCount == 0) {
+                    continue;
                 }
-                sb.append("\n");
+                
+                totalRed += redCount;
+                totalWhite += whiteCount;
+                
+                sb.append(String.format("%-15s %-8d %-8d\n", key, redCount, whiteCount));
             }
             
-            // Regular shapes - red
-            if (!regularShapesRed.isEmpty()) {
-                sb.append("Regular Shapes (Red):\n");
-                List<String> sortedKeys = new ArrayList<>(regularShapesRed.keySet());
-                Collections.sort(sortedKeys);
-                
-                for (String key : sortedKeys) {
-                    int count = regularShapesRed.get(key);
-                    sb.append(String.format("  %s: %d\n", key, count));
-                }
-                sb.append("\n");
-            }
+            // Total row
+            sb.append("----------------------------------------\n");
+            sb.append(String.format("%-15s %-8d %-8d\n", "Total", totalRed, totalWhite));
             
-            // Summary
-            int totalComplex = complexShapes.values().stream().mapToInt(Integer::intValue).sum();
-            int totalWhite = regularShapesWhite.values().stream().mapToInt(Integer::intValue).sum();
-            int totalRed = regularShapesRed.values().stream().mapToInt(Integer::intValue).sum();
-            int totalRegular = totalWhite + totalRed;
-            
+            // Detailed summary (only in dedicated report)
+            sb.append("\n");
             sb.append("Summary:\n");
+            int totalComplex = complexShapes.values().stream().mapToInt(Integer::intValue).sum();
+            int totalRegularWhite = regularShapesWhite.values().stream().mapToInt(Integer::intValue).sum();
+            int totalRegularRed = regularShapesRed.values().stream().mapToInt(Integer::intValue).sum();
+            int totalRegular = totalRegularWhite + totalRegularRed;
+            
             sb.append(String.format("  Complex shapes: %d\n", totalComplex));
-            sb.append(String.format("  Regular shapes (white): %d\n", totalWhite));
-            sb.append(String.format("  Regular shapes (red): %d\n", totalRed));
+            sb.append(String.format("  Regular shapes (white): %d\n", totalRegularWhite));
+            sb.append(String.format("  Regular shapes (red): %d\n", totalRegularRed));
             sb.append(String.format("  Total regular shapes: %d\n", totalRegular));
             sb.append(String.format("  Total shapes: %d\n", totalComplex + totalRegular));
             

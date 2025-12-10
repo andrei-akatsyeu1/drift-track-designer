@@ -1,6 +1,5 @@
 package com.trackdraw.config;
 
-import com.trackdraw.model.AlignPosition;
 import com.trackdraw.model.AnnularSector;
 import com.trackdraw.model.Rectangle;
 import com.trackdraw.model.HalfCircle;

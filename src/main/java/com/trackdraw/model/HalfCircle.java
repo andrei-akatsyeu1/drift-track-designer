@@ -72,10 +72,6 @@ public class HalfCircle extends ShapeInstance {
         double startX = centerX - radius;
         double startY = centerY;
         
-        // End point of diameter (right side)
-        double endX = centerX + radius;
-        double endY = centerY;
-        
         // Create arc for the semicircle (180 degrees, starting from right, going counterclockwise)
         Arc2D.Double arc = new Arc2D.Double(
             centerX - radius, centerY - radius,

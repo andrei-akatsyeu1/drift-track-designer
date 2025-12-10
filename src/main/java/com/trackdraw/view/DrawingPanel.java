@@ -26,6 +26,7 @@ public class DrawingPanel extends JPanel {
     private MeasurementTool measurementTool = new MeasurementTool();
     private boolean showKeys = false; // Whether to show shape keys
     private java.util.function.Consumer<String> statusMessageHandler; // Handler to set status messages
+    private java.util.function.Consumer<Double> globalScaleChangeHandler; // Handler to notify when global scale changes
     
     // Pan offset for canvas dragging
     private double panX = 0.0;
@@ -380,6 +381,14 @@ public class DrawingPanel extends JPanel {
     }
     
     /**
+     * Sets the handler to be called when global scale changes via mouse wheel.
+     * @param handler Handler that receives the new scale value
+     */
+    public void setGlobalScaleChangeHandler(java.util.function.Consumer<Double> handler) {
+        this.globalScaleChangeHandler = handler;
+    }
+    
+    /**
      * Sets whether to show shape keys on the canvas.
      * @param showKeys true to show keys, false to hide them
      */
@@ -393,6 +402,14 @@ public class DrawingPanel extends JPanel {
      */
     public boolean isShowKeys() {
         return showKeys;
+    }
+    
+    /**
+     * Gets the background image.
+     * @return Background image, or null if not set
+     */
+    public BufferedImage getBackgroundImage() {
+        return backgroundImage;
     }
     
     /**
@@ -447,11 +464,27 @@ public class DrawingPanel extends JPanel {
                 double currentScale = GlobalScale.getScale();
                 double newScale = currentScale + delta;
                 
+                // Normalize scale to clean increments to avoid floating point precision issues
+                // If delta is 0.1 (10%), round to nearest 0.1; if delta is 0.01 (1%), round to nearest 0.01
+                if (Math.abs(delta) >= 0.05) {
+                    // 10% change: round to nearest 0.1
+                    newScale = Math.round(newScale * 10.0) / 10.0;
+                } else {
+                    // 1% change: round to nearest 0.01
+                    newScale = Math.round(newScale * 100.0) / 100.0;
+                }
+                
                 // Clamp to reasonable range
                 if (newScale < 0.1) newScale = 0.1;
                 if (newScale > 10.0) newScale = 10.0;
                 
                 GlobalScale.setScale(newScale);
+                
+                // Notify handler if set (to update UI controls)
+                if (globalScaleChangeHandler != null) {
+                    globalScaleChangeHandler.accept(newScale);
+                }
+                
                 repaint();
             }
         });

@@ -262,9 +262,12 @@ public abstract class ShapeInstance {
         double textX = (alignPosition.getX() + nextAlignPos.getX()) / 2.0;
         double textY = (alignPosition.getY() + nextAlignPos.getY()) / 2.0;
         
-        // Set font (smaller size)
+        // Set font (smaller size, scaled by GlobalScale for export)
         java.awt.Font originalFont = g2d.getFont();
-        java.awt.Font textFont = new java.awt.Font(originalFont.getName(), java.awt.Font.BOLD, 10);
+        double currentScale = com.trackdraw.config.GlobalScale.getScale();
+        int fontSize = (int)(5 * currentScale);
+        if (fontSize < 1) fontSize = 1; // Minimum font size
+        java.awt.Font textFont = new java.awt.Font(originalFont.getName(), java.awt.Font.BOLD, fontSize);
         g2d.setFont(textFont);
         
         // Set text color based on effectiveIsRed

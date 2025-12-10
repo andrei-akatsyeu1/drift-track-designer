@@ -103,6 +103,11 @@ When you first launch Track Draw, you'll see:
 - `-` button: Decrease image scale by 10%
 - `+` button: Increase image scale by 10%
 
+**Show Keys** (Checkbox)
+- Checkbox to enable/disable displaying shape keys on the canvas
+- When enabled, each shape displays its key (e.g., "05", "L", "E")
+- Text color: black for white shapes, white for red shapes
+
 **Measurement Tool** (📏)
 - Checkbox to enable/disable the measurement tool
 - When enabled, click two points on the canvas to measure distance
@@ -132,6 +137,7 @@ When you first launch Track Draw, you'll see:
 - Displays all sequences and shapes
 - Shows background image if loaded
 - Click to focus for keyboard controls
+- **Canvas Panning**: Hold left mouse button and drag to pan the entire canvas
 
 **Status Bar** (Bottom)
 - Shows status messages and notifications
@@ -342,7 +348,37 @@ When you create a sequence from a shape:
 - Use the image scale control in the top panel
 - Or use keyboard shortcuts: `Page Up/Down` (10%) or `Ctrl + Page Up/Down` (1%)
 
+### Exporting Images
+
+**Export to PNG**:
+1. Go to **File → Export Image...**
+2. Configure export options in the dialog:
+   - **Show Background Image**: Include background image in export
+   - **Show Shape Keys**: Display shape keys on exported image
+   - **Include Shapes Report**: Add a table report at the bottom showing shape counts by type and color
+   - **Scale**: Export scale multiplier (1x to 10x)
+3. Click OK
+4. Choose a location and filename for the PNG file
+5. Click Save
+
+**Export Features**:
+- Exported images include all sequences with proper scaling
+- Background image is included if enabled
+- Shape keys are displayed if enabled (scaled appropriately)
+- Shapes report shows a compact table format with shape counts
+- Images are automatically sized to fit all content with padding
+
 ## Advanced Features
+
+### Canvas Panning
+
+You can pan (move) the entire canvas to navigate around your design:
+
+1. **Hold left mouse button** on the canvas
+2. **Drag** to move the canvas in any direction
+3. **Release** to stop panning
+
+**Note**: Panning is disabled when the measurement tool is active.
 
 ### Measurement Tool
 

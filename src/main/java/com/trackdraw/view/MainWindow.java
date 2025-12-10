@@ -4,6 +4,7 @@ import com.trackdraw.config.SequenceManager;
 import com.trackdraw.config.ShapeConfig;
 import com.trackdraw.model.ShapeSequence;
 import com.trackdraw.report.ShapeReportGenerator;
+import java.awt.image.BufferedImage;
 
 import javax.swing.*;
 import java.awt.*;
@@ -110,18 +111,22 @@ public class MainWindow extends JFrame {
         // Help button with keyboard shortcuts tooltip
         JButton helpButton = new JButton("?");
         helpButton.setFont(measureFont);
-        String tooltipText = "<html><b>Keyboard Shortcuts:</b><br>" +
+            String tooltipText = "<html><b>Keyboard Shortcuts:</b><br>" +
+            "<b>Canvas Panning:</b><br>" +
+            "Left Mouse Drag: Pan canvas<br><br>" +
             "<b>Sequence Alignment (when sequence not linked):</b><br>" +
             "Arrow Keys: Move by 10px<br>" +
             "Arrow + Ctrl: Move by 1px<br>" +
+            "Shift + Arrow Keys: Move all sequences by 10px<br>" +
+            "Shift + Ctrl + Arrow Keys: Move all sequences by 1px<br>" +
             "+ / -: Rotate by 10°<br>" +
             "+ / - + Ctrl: Rotate by 1°<br><br>" +
             "<b>Global Scale:</b><br>" +
+            "Mouse Wheel: Scale by 10%<br>" +
+            "Mouse Wheel + Ctrl: Scale by 1%<br><br>" +
+            "<b>Image Scale:</b><br>" +
             "Page Up/Down: Scale by 10%<br>" +
             "Page Up/Down + Ctrl: Scale by 1%<br><br>" +
-            "<b>Image Scale:</b><br>" +
-            "Shift + Page Up/Down: Scale by 10%<br>" +
-            "Shift + Page Up/Down + Ctrl: Scale by 1%<br><br>" +
             "<b>Measurement Tool:</b><br>" +
             "Esc: Disable measurement tool</html>";
         helpButton.setToolTipText(tooltipText);
@@ -182,6 +187,11 @@ public class MainWindow extends JFrame {
         // Setup handlers for UI components
         scaleControlPanel.setScaleChangeHandler(scale -> {
             drawingCoordinator.drawAll();
+        });
+        
+        // Update scale control panel when scale changes via mouse wheel
+        drawingPanel.setGlobalScaleChangeHandler(scale -> {
+            scaleControlPanel.setScale(scale);
         });
         
         backgroundImageScalePanel.setScaleChangeHandler(scale -> {
@@ -286,6 +296,12 @@ public class MainWindow extends JFrame {
         JMenuItem clearImageItem = new JMenuItem("Clear Background Image");
         clearImageItem.addActionListener(e -> clearBackgroundImage());
         fileMenu.add(clearImageItem);
+        
+        fileMenu.addSeparator();
+        
+        JMenuItem exportItem = new JMenuItem("Export Image...");
+        exportItem.addActionListener(e -> exportImage());
+        fileMenu.add(exportItem);
         
         fileMenu.addSeparator();
         
@@ -477,6 +493,63 @@ public class MainWindow extends JFrame {
         // Image scale: Page Up/Down (10%), Page Up/Down + Ctrl (1%)
         backgroundImageScalePanel.getScaleControl().bindKeyboardKeys(KeyEvent.VK_PAGE_UP, false, 0.1);
         backgroundImageScalePanel.getScaleControl().bindKeyboardKeys(KeyEvent.VK_PAGE_DOWN, false, -0.1);
+    }
+    
+    /**
+     * Exports the canvas to a PNG image file.
+     */
+    private void exportImage() {
+        ExportDialog dialog = new ExportDialog(this);
+        dialog.setVisible(true);
+        
+        if (!dialog.isConfirmed()) {
+            return;
+        }
+        
+        // Show file chooser
+        javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
+        fileChooser.setDialogTitle("Export Image");
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
+            "PNG Images", "png"));
+        
+        int result = fileChooser.showSaveDialog(this);
+        if (result != javax.swing.JFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        
+        File file = fileChooser.getSelectedFile();
+        if (file == null) {
+            return;
+        }
+        
+        // Ensure .png extension
+        if (!file.getName().toLowerCase().endsWith(".png")) {
+            file = new File(file.getParent(), file.getName() + ".png");
+        }
+        
+        try {
+            // Get sequences and background image
+            List<ShapeSequence> sequences = shapeSequencePanel.getSequences();
+            BufferedImage backgroundImage = drawingPanel.getBackgroundImage();
+            double backgroundImageScale = drawingPanel.getBackgroundImageScale();
+            
+            // Export
+            ImageExporter.exportToPNG(
+                sequences,
+                backgroundImage,
+                backgroundImageScale,
+                dialog.isShowBackgroundImage(),
+                dialog.isShowKey(),
+                dialog.isShapesReport(),
+                dialog.getScale(),
+                file
+            );
+            
+            statusBar.setStatus("Image exported successfully: " + file.getName(), 3000);
+        } catch (Exception e) {
+            statusBar.setStatus("Export failed: " + e.getMessage(), 5000);
+            e.printStackTrace();
+        }
     }
     
     /**

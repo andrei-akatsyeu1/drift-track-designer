@@ -78,10 +78,22 @@ public class ScaleControl extends JPanel {
     
     /**
      * Changes the scale by the specified delta (e.g., 0.1 for 10%).
+     * Normalizes the scale to ensure clean increments (rounds to nearest 0.1 for 10% changes, 0.01 for 1% changes).
      * @param delta Scale change delta
      */
     public void changeScale(double delta) {
         currentScale += delta;
+        
+        // Normalize scale to clean increments to avoid floating point precision issues
+        // If delta is 0.1 (10%), round to nearest 0.1; if delta is 0.01 (1%), round to nearest 0.01
+        if (Math.abs(delta) >= 0.05) {
+            // 10% change: round to nearest 0.1
+            currentScale = Math.round(currentScale * 10.0) / 10.0;
+        } else {
+            // 1% change: round to nearest 0.01
+            currentScale = Math.round(currentScale * 100.0) / 100.0;
+        }
+        
         // Clamp to min/max range
         if (currentScale < minScale) {
             currentScale = minScale;
@@ -100,9 +112,10 @@ public class ScaleControl extends JPanel {
     
     /**
      * Updates the scale display.
+     * Rounds the percentage instead of truncating to ensure accurate display.
      */
     private void updateScale() {
-        int scalePercent = (int)(currentScale * 100);
+        int scalePercent = (int)Math.round(currentScale * 100);
         scaleField.setText(scalePercent + "%");
     }
     

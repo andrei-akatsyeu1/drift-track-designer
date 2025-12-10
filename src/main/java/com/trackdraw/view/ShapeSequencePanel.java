@@ -430,17 +430,6 @@ public class ShapeSequencePanel extends JPanel {
     }
     
     /**
-     * Selects the given sequence in the list.
-     * @param sequence Sequence to select
-     */
-    private void selectSequence(ShapeSequence sequence) {
-        int index = sequences.indexOf(sequence);
-        if (index >= 0) {
-            sequenceList.setSelectedIndex(index);
-        }
-    }
-    
-    /**
      * Toggles the invertAlignment flag for the active sequence.
      * Only works if the sequence is linked to a shape (not a position).
      */
