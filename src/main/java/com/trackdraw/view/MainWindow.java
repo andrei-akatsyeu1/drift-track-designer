@@ -39,6 +39,7 @@ public class MainWindow extends JFrame {
     // State
     private List<ShapeSequence> allSequences;
     private ShapeSequence activeSequence;
+    private String loadedJsonFileName; // Name of loaded JSON file (without extension)
     
     public MainWindow() {
         initializeComponents();
@@ -387,12 +388,22 @@ public class MainWindow extends JFrame {
         int result = fileChooser.showOpenDialog(this);
         if (result == JFileChooser.APPROVE_OPTION) {
             try {
-                SequenceManager.LoadResult loadResult = sequenceManager.loadSequences(fileChooser.getSelectedFile().getAbsolutePath());
+                File selectedFile = fileChooser.getSelectedFile();
+                SequenceManager.LoadResult loadResult = sequenceManager.loadSequences(selectedFile.getAbsolutePath());
                 List<ShapeSequence> loadedSequences = loadResult.getSequences();
                 
                 if (loadedSequences.isEmpty()) {
                     statusBar.setStatus("No sequences found in file", 3000);
                     return;
+                }
+                
+                // Store the loaded JSON file name (without extension) for export
+                String fileName = selectedFile.getName();
+                int lastDot = fileName.lastIndexOf('.');
+                if (lastDot > 0) {
+                    loadedJsonFileName = fileName.substring(0, lastDot);
+                } else {
+                    loadedJsonFileName = fileName;
                 }
                 
                 // Replace current sequences
@@ -511,6 +522,18 @@ public class MainWindow extends JFrame {
         fileChooser.setDialogTitle("Export Image");
         fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
             "PNG Images", "png"));
+        
+        // Set default directory to export folder
+        fileChooser.setCurrentDirectory(com.trackdraw.config.FileManager.getExportDirectory());
+        
+        // Set default file name: use loaded JSON file name if available, otherwise use active sequence name
+        String defaultName = "export";
+        if (loadedJsonFileName != null && !loadedJsonFileName.isEmpty()) {
+            defaultName = loadedJsonFileName;
+        } else if (activeSequence != null && activeSequence.getName() != null && !activeSequence.getName().isEmpty()) {
+            defaultName = activeSequence.getName();
+        }
+        fileChooser.setSelectedFile(new File(defaultName + ".png"));
         
         int result = fileChooser.showSaveDialog(this);
         if (result != javax.swing.JFileChooser.APPROVE_OPTION) {

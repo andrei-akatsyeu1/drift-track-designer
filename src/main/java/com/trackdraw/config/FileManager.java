@@ -16,6 +16,7 @@ import java.util.Date;
 public class FileManager {
     private static final String SAVES_DIR = "saves";
     private static final String IMAGES_DIR = "images";
+    private static final String EXPORT_DIR = "export";
     
     /**
      * Gets the working directory (project root).
@@ -47,6 +48,18 @@ public class FileManager {
             imagesDir.mkdirs();
         }
         return imagesDir;
+    }
+    
+    /**
+     * Gets the export directory, creating it if it doesn't exist.
+     * @return File representing the export directory
+     */
+    public static File getExportDirectory() {
+        File exportDir = new File(getWorkingDirectory(), EXPORT_DIR);
+        if (!exportDir.exists()) {
+            exportDir.mkdirs();
+        }
+        return exportDir;
     }
     
     /**
