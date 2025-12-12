@@ -615,6 +615,48 @@ public class MainWindow extends JFrame {
         shapePalettePanel.createPalettes();
     }
     
+    // ========== Getters for Testing ==========
+    
+    /**
+     * Gets the drawing panel (for testing purposes).
+     * @return Drawing panel instance
+     */
+    public DrawingPanel getDrawingPanel() {
+        return drawingPanel;
+    }
+    
+    /**
+     * Gets the scale control panel (for testing purposes).
+     * @return Scale control panel instance
+     */
+    public ScaleControlPanel getScaleControlPanel() {
+        return scaleControlPanel;
+    }
+    
+    /**
+     * Gets the measurement tool checkbox (for testing purposes).
+     * @return Measurement tool checkbox
+     */
+    public JCheckBox getMeasureCheckBox() {
+        return measureCheckBox;
+    }
+    
+    /**
+     * Gets the shape sequence panel (for testing purposes).
+     * @return Shape sequence panel instance
+     */
+    public ShapeSequencePanel getShapeSequencePanel() {
+        return shapeSequencePanel;
+    }
+    
+    /**
+     * Gets all sequences (for testing purposes).
+     * @return List of all sequences
+     */
+    public List<ShapeSequence> getAllSequences() {
+        return allSequences;
+    }
+    
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             try {

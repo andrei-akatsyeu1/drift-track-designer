@@ -8,4 +8,11 @@ shape1,shape2,allows_same_orientation
 05,L,true
 10,10,false
 10,15,false
-
+025,025,false
+025,05,true
+025,10,true
+025,15,true
+025,20,true
+025,25,true
+025,30,true
+025,L,true

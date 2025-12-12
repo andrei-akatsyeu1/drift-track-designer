@@ -2,7 +2,7 @@
   "sequences": [
     {
       "name": "Main",
-      "active": true,
+      "active": false,
       "invertAlignment": false,
       "shapes": [
         {
@@ -586,7 +586,7 @@
     },
     {
       "name": "Sequence 5",
-      "active": false,
+      "active": true,
       "invertAlignment": true,
       "shapes": [
         {
@@ -940,11 +940,11 @@
           "forceInvertColor": false
         },
         {
-          "id": "d8a3f532-2611-4c1b-8cf9-2a5807ea6358",
+          "id": "7ec1e7eb-c543-48ab-88a8-5e570b930c70",
           "type": "annular_sector",
-          "key": "05",
-          "externalDiameter": 50.0,
-          "angleDegrees": 45.0,
+          "key": "025",
+          "externalDiameter": 25.0,
+          "angleDegrees": 90.0,
           "width": 6.0,
           "length": 0.0,
           "diameter": 0.0,
@@ -954,7 +954,49 @@
           "forceInvertColor": false
         },
         {
-          "id": "bc3b2930-91a2-4afc-a620-63c453eeddf1",
+          "id": "adc1c10a-fc19-4917-a336-29d180717aa2",
+          "type": "annular_sector",
+          "key": "025",
+          "externalDiameter": 25.0,
+          "angleDegrees": 90.0,
+          "width": 6.0,
+          "length": 0.0,
+          "diameter": 0.0,
+          "orientation": -1,
+          "active": false,
+          "isRed": false,
+          "forceInvertColor": false
+        },
+        {
+          "id": "1f85ab16-e42f-43b6-9ae1-a2e1b2e46f6d",
+          "type": "rectangle",
+          "key": "L",
+          "externalDiameter": 0.0,
+          "angleDegrees": 0.0,
+          "width": 6.0,
+          "length": 19.0,
+          "diameter": 0.0,
+          "orientation": 1,
+          "active": false,
+          "isRed": true,
+          "forceInvertColor": false
+        },
+        {
+          "id": "00f5707d-4d7a-4d26-a891-697c0bd25d8f",
+          "type": "rectangle",
+          "key": "L",
+          "externalDiameter": 0.0,
+          "angleDegrees": 0.0,
+          "width": 6.0,
+          "length": 19.0,
+          "diameter": 0.0,
+          "orientation": 1,
+          "active": false,
+          "isRed": false,
+          "forceInvertColor": false
+        },
+        {
+          "id": "3cb78e6c-3562-4f2e-848e-74a4e3ed7f22",
           "type": "half_circle",
           "key": "E",
           "externalDiameter": 0.0,
@@ -964,7 +1006,7 @@
           "diameter": 6.0,
           "orientation": 1,
           "active": true,
-          "isRed": false,
+          "isRed": true,
           "forceInvertColor": false
         }
       ],

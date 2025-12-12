@@ -2,6 +2,13 @@
   "shapes": [
     {
       "type": "annular_sector",
+      "key": "025",
+      "externalDiameter": 25.0,
+      "angleDegrees": 90.0,
+      "width": 6.0
+    },
+    {
+      "type": "annular_sector",
       "key": "05",
       "externalDiameter": 50.0,
       "angleDegrees": 45.0,

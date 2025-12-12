@@ -137,21 +137,7 @@ public class ShapeConfig {
             }
         }
     }
-    
-    /**
-     * Saves shapes to the configuration file.
-     */
-    public void saveShapes() throws IOException {
-        File configFile = new File("src/main/resources", CONFIG_FILE);
-        configFile.getParentFile().mkdirs();
-        
-        try (Writer writer = new FileWriter(configFile)) {
-            JsonObject root = new JsonObject();
-            root.add("shapes", gson.toJsonTree(new ArrayList<>(shapes.values())));
-            gson.toJson(root, writer);
-        }
-    }
-    
+
     /**
      * Adds a shape to the configuration.
      */

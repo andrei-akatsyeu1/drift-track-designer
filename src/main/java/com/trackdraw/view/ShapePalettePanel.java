@@ -16,7 +16,7 @@ import java.util.function.BiConsumer;
  * Two palettes: one for orientation = 1, one for orientation = -1.
  */
 public class ShapePalettePanel extends JPanel {
-    private static final int BUTTON_WIDTH = 60; // Fixed width for all buttons (increased to fit "-05", "-10", etc.)
+    private static final int BUTTON_WIDTH = 70; // Fixed width for all buttons (increased to fit "-05", "-10", etc.)
     private static final int BUTTON_HEIGHT = 30; // Fixed height for all buttons
     
     private JPanel palettePanel1; // Palette for orientation = 1
