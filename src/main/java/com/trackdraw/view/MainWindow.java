@@ -55,6 +55,7 @@ public class MainWindow extends JFrame {
         
         // Initialize UI components
         drawingPanel = new DrawingPanel();
+        drawingPanel.setName("drawingPanel");
         shapeConfig = new ShapeConfig();
         sequenceManager = new SequenceManager();
         scaleControlPanel = new ScaleControlPanel();
@@ -655,6 +656,14 @@ public class MainWindow extends JFrame {
      */
     public List<ShapeSequence> getAllSequences() {
         return allSequences;
+    }
+    
+    /**
+     * Gets the keyboard controller (for testing purposes).
+     * @return Keyboard controller instance
+     */
+    public AlignmentKeyboardController getKeyboardController() {
+        return keyboardController;
     }
     
     public static void main(String[] args) {

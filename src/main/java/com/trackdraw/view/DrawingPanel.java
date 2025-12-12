@@ -402,6 +402,22 @@ public class DrawingPanel extends JPanel {
     }
     
     /**
+     * Gets the current pan X offset.
+     * @return Pan X offset
+     */
+    public double getPanX() {
+        return panX;
+    }
+    
+    /**
+     * Gets the current pan Y offset.
+     * @return Pan Y offset
+     */
+    public double getPanY() {
+        return panY;
+    }
+    
+    /**
      * Sets up keyboard controls for the measurement tool.
      * Esc key disables the measurement tool.
      */

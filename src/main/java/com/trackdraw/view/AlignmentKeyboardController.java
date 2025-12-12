@@ -170,7 +170,7 @@ public class AlignmentKeyboardController {
      * @param deltaAngle Change in rotation angle (degrees, positive = CCW)
      * @param onlyActive If true, only adjust the active sequence; if false, adjust all unlinked sequences
      */
-    private void adjustAlignmentPosition(double deltaX, double deltaY, double deltaAngle, boolean onlyActive) {
+    void adjustAlignmentPosition(double deltaX, double deltaY, double deltaAngle, boolean onlyActive) {
         List<ShapeSequence> sequencesToProcess;
         
         if (onlyActive) {
