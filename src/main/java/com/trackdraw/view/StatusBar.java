@@ -9,7 +9,7 @@ import java.awt.*;
  * Status bar component to display messages instead of popups.
  */
 public class StatusBar extends JPanel {
-    private JLabel statusLabel;
+    private final JLabel statusLabel;
     
     public StatusBar() {
         setLayout(new BorderLayout());
@@ -36,9 +36,7 @@ public class StatusBar extends JPanel {
      */
     public void setStatus(String message, int timeoutMs) {
         setStatus(message);
-        Timer timer = new Timer(timeoutMs, e -> {
-            setStatus("Ready");
-        });
+        Timer timer = new Timer(timeoutMs, e -> setStatus("Ready"));
         timer.setRepeats(false);
         timer.start();
     }

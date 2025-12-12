@@ -1,6 +1,8 @@
 package com.trackdraw.model;
 
 import com.trackdraw.config.GlobalScale;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
@@ -10,6 +12,8 @@ import java.util.UUID;
  * Represents a rectangle shape.
  * Defined by length and width.
  */
+@Getter
+@Setter
 public class Rectangle extends ShapeInstance {
     private double length;
     private double width;
@@ -27,23 +31,7 @@ public class Rectangle extends ShapeInstance {
     public String getType() {
         return "rectangle";
     }
-    
-    public double getLength() {
-        return length;
-    }
-    
-    public void setLength(double length) {
-        this.length = length;
-    }
-    
-    public double getWidth() {
-        return width;
-    }
-    
-    public void setWidth(double width) {
-        this.width = width;
-    }
-    
+
     @Override
     public ShapeInstance copy() {
         Rectangle copy = new Rectangle(key, length, width);

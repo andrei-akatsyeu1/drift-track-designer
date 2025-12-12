@@ -2,14 +2,10 @@ package com.trackdraw.view;
 
 import com.trackdraw.model.AlignPosition;
 import com.trackdraw.model.ShapeSequence;
-import org.assertj.swing.core.KeyPressInfo;
-import org.assertj.swing.fixture.JPanelFixture;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
