@@ -1,6 +1,8 @@
 package com.trackdraw.model;
 
 import com.trackdraw.config.GlobalScale;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.awt.*;
 import java.awt.geom.Arc2D;
@@ -10,6 +12,8 @@ import java.util.UUID;
  * Represents an annular sector (ring segment) shape.
  * Defined by external diameter, angle in degrees, and width.
  */
+@Getter
+@Setter
 public class AnnularSector extends ShapeInstance {
     private double externalDiameter;
     private double angleDegrees;
@@ -28,30 +32,6 @@ public class AnnularSector extends ShapeInstance {
     @Override
     public String getType() {
         return "annular_sector";
-    }
-    
-    public double getExternalDiameter() {
-        return externalDiameter;
-    }
-    
-    public void setExternalDiameter(double externalDiameter) {
-        this.externalDiameter = externalDiameter;
-    }
-    
-    public double getAngleDegrees() {
-        return angleDegrees;
-    }
-    
-    public void setAngleDegrees(double angleDegrees) {
-        this.angleDegrees = angleDegrees;
-    }
-    
-    public double getWidth() {
-        return width;
-    }
-    
-    public void setWidth(double width) {
-        this.width = width;
     }
     
     /**

@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -526,7 +527,7 @@ public class ShapeSequence {
      * @param padding Padding to add around the bounds (in current scale units)
      * @return Rectangle2D.Double representing the bounds, or null if sequence is empty
      */
-    public java.awt.geom.Rectangle2D.Double calculateBounds(AlignPosition initialPos, Graphics2D g2d, double padding) {
+    public Rectangle2D.Double calculateBounds(AlignPosition initialPos, Graphics2D g2d, double padding) {
         if (shapes.isEmpty() || initialPos == null) {
             return null;
         }
@@ -558,7 +559,7 @@ public class ShapeSequence {
         maxX = maxX + padding;
         maxY = maxY + padding;
 
-        return new java.awt.geom.Rectangle2D.Double(minX, minY, maxX - minX, maxY - minY);
+        return new Rectangle2D.Double(minX, minY, maxX - minX, maxY - minY);
     }
 }
 

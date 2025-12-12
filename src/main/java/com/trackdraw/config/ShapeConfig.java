@@ -15,7 +15,12 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.google.gson.reflect.TypeToken;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -106,7 +111,7 @@ public class ShapeConfig {
      */
     public void loadShapes() throws IOException {
         // Try to load from classpath first (for packaged JAR)
-        java.io.InputStream inputStream = getClass().getClassLoader().getResourceAsStream(CONFIG_FILE);
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(CONFIG_FILE);
         
         if (inputStream == null) {
             // Fallback to file system (for development)
@@ -115,10 +120,10 @@ public class ShapeConfig {
                 System.out.println("Config file not found, creating default...");
                 return;
             }
-            inputStream = new java.io.FileInputStream(configFile);
+            inputStream = new FileInputStream(configFile);
         }
         
-        try (Reader reader = new java.io.InputStreamReader(inputStream, "UTF-8")) {
+        try (Reader reader = new InputStreamReader(inputStream, "UTF-8")) {
             JsonObject root = gson.fromJson(reader, JsonObject.class);
             if (root.has("shapes")) {
                 // Use ArrayList to preserve order from JSON

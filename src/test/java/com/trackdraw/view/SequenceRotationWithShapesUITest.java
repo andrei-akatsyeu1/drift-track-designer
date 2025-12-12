@@ -2,9 +2,6 @@ package com.trackdraw.view;
 
 import com.trackdraw.config.SequenceManager;
 import com.trackdraw.model.AlignPosition;
-import com.trackdraw.model.AnnularSector;
-import com.trackdraw.model.HalfCircle;
-import com.trackdraw.model.Rectangle;
 import com.trackdraw.model.ShapeInstance;
 import com.trackdraw.model.ShapeSequence;
 import org.junit.jupiter.api.DisplayName;
@@ -12,7 +9,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.awt.event.KeyEvent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -198,6 +194,7 @@ public class SequenceRotationWithShapesUITest extends BaseUITest {
             // Add a shape to make it non-empty (create new instance from template)
             ShapeInstance template = parentSeq.getShapes().get(0);
             ShapeInstance newShape = createShapeInstance(template);
+            newShape.setOrientation(-template.getOrientation());
             linkedSeq.insertShape(0, newShape);
         }
         linkedSeq.setActive(true);
@@ -256,18 +253,7 @@ public class SequenceRotationWithShapesUITest extends BaseUITest {
      * Creates a new ShapeInstance from a template (similar to ShapeSequenceController).
      */
     private ShapeInstance createShapeInstance(ShapeInstance template) {
-        if (template instanceof AnnularSector) {
-            AnnularSector sector = (AnnularSector) template;
-            return new AnnularSector(sector.getKey(), sector.getExternalDiameter(), 
-                sector.getAngleDegrees(), sector.getWidth());
-        } else if (template instanceof Rectangle) {
-            Rectangle rect = (Rectangle) template;
-            return new Rectangle(rect.getKey(), rect.getLength(), rect.getWidth());
-        } else if (template instanceof HalfCircle) {
-            HalfCircle halfCircle = (HalfCircle) template;
-            return new HalfCircle(halfCircle.getKey(), halfCircle.getDiameter());
-        }
-        throw new IllegalArgumentException("Unknown shape type: " + template.getType());
+        return template.copy();
     }
 }
 

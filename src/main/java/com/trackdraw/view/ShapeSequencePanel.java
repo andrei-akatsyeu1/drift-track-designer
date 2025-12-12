@@ -6,6 +6,7 @@ import com.trackdraw.model.ShapeSequence;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -260,8 +261,8 @@ public class ShapeSequencePanel extends JPanel {
         
         // Calculate the next align position by simulating drawing
         // Create a dummy Graphics2D to calculate the next position
-        java.awt.image.BufferedImage dummyImage = new java.awt.image.BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
-        java.awt.Graphics2D dummyG2d = dummyImage.createGraphics();
+        BufferedImage dummyImage = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D dummyG2d = dummyImage.createGraphics();
         AlignPosition nextPosition = activeShape.draw(dummyG2d);
         dummyG2d.dispose();
         

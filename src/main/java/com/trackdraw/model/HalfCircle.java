@@ -1,6 +1,8 @@
 package com.trackdraw.model;
 
 import com.trackdraw.config.GlobalScale;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.awt.*;
 import java.awt.geom.Arc2D;
@@ -11,6 +13,8 @@ import java.util.UUID;
  * Defined by diameter (which equals width).
  * This is a closing shape that can be aligned by diameter.
  */
+@Getter
+@Setter
 public class HalfCircle extends ShapeInstance {
     private double diameter; // diameter = width = 6
     
@@ -25,14 +29,6 @@ public class HalfCircle extends ShapeInstance {
     @Override
     public String getType() {
         return "half_circle";
-    }
-    
-    public double getDiameter() {
-        return diameter;
-    }
-    
-    public void setDiameter(double diameter) {
-        this.diameter = diameter;
     }
     
     public double getWidth() {
