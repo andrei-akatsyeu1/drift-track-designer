@@ -4,6 +4,7 @@ import com.trackdraw.config.GlobalScale;
 
 import java.awt.Graphics2D;
 import java.awt.geom.Rectangle2D;
+import java.util.UUID;
 
 /**
  * Represents a rectangle shape.
@@ -41,6 +42,20 @@ public class Rectangle extends ShapeInstance {
     
     public void setWidth(double width) {
         this.width = width;
+    }
+    
+    @Override
+    public ShapeInstance copy() {
+        Rectangle copy = new Rectangle(key, length, width);
+        copy.setId(UUID.randomUUID()); // New UUID
+        copy.setOrientation(orientation);
+        copy.setRed(isRed);
+        copy.setForceInvertColor(forceInvertColor);
+        copy.setContourColor(contourColor);
+        copy.setInfillColor(infillColor);
+        copy.setActive(active);
+        copy.setAlignPosition(alignPosition != null ? new AlignPosition(alignPosition.getX(), alignPosition.getY(), alignPosition.getAngle()) : null);
+        return copy;
     }
 
     @Override

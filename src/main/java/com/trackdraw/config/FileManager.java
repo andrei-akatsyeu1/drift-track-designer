@@ -1,5 +1,7 @@
 package com.trackdraw.config;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,15 +29,24 @@ public class FileManager {
     }
     
     /**
+     * Gets or creates a directory under the working directory.
+     * @param dirName Name of the directory
+     * @return File representing the directory
+     */
+    private static File getOrCreateDirectory(String dirName) {
+        File dir = new File(getWorkingDirectory(), dirName);
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        return dir;
+    }
+    
+    /**
      * Gets the saves directory, creating it if it doesn't exist.
      * @return File representing the saves directory
      */
     public static File getSavesDirectory() {
-        File savesDir = new File(getWorkingDirectory(), SAVES_DIR);
-        if (!savesDir.exists()) {
-            savesDir.mkdirs();
-        }
-        return savesDir;
+        return getOrCreateDirectory(SAVES_DIR);
     }
     
     /**
@@ -43,11 +54,7 @@ public class FileManager {
      * @return File representing the images directory
      */
     public static File getImagesDirectory() {
-        File imagesDir = new File(getWorkingDirectory(), IMAGES_DIR);
-        if (!imagesDir.exists()) {
-            imagesDir.mkdirs();
-        }
-        return imagesDir;
+        return getOrCreateDirectory(IMAGES_DIR);
     }
     
     /**
@@ -55,11 +62,7 @@ public class FileManager {
      * @return File representing the export directory
      */
     public static File getExportDirectory() {
-        File exportDir = new File(getWorkingDirectory(), EXPORT_DIR);
-        if (!exportDir.exists()) {
-            exportDir.mkdirs();
-        }
-        return exportDir;
+        return getOrCreateDirectory(EXPORT_DIR);
     }
     
     /**
@@ -94,18 +97,16 @@ public class FileManager {
      * @return Relative path (e.g., "image.png" or "subfolder/image.png"), or null if not in images directory
      */
     public static String toRelativeImagePath(String absolutePath) {
-        if (absolutePath == null || absolutePath.isEmpty()) {
+        if (StringUtils.isEmpty(absolutePath)) {
             return null;
         }
         
         try {
-            File imagesDir = getImagesDirectory();
-            Path imagesPath = imagesDir.toPath().toAbsolutePath().normalize();
+            Path imagesPath = getImagesDirectory().toPath().toAbsolutePath().normalize();
             Path filePath = Paths.get(absolutePath).toAbsolutePath().normalize();
             
             if (filePath.startsWith(imagesPath)) {
-                Path relativePath = imagesPath.relativize(filePath);
-                return relativePath.toString().replace('\\', '/'); // Normalize to forward slashes
+                return imagesPath.relativize(filePath).toString().replace('\\', '/');
             }
         } catch (Exception e) {
             // If conversion fails, return null
@@ -120,13 +121,12 @@ public class FileManager {
      * @return Absolute path to the image file, or null if invalid
      */
     public static String toAbsoluteImagePath(String relativePath) {
-        if (relativePath == null || relativePath.isEmpty()) {
+        if (StringUtils.isEmpty(relativePath)) {
             return null;
         }
         
         try {
-            File imagesDir = getImagesDirectory();
-            File imageFile = new File(imagesDir, relativePath);
+            File imageFile = new File(getImagesDirectory(), relativePath);
             if (imageFile.exists()) {
                 return imageFile.getAbsolutePath();
             }
@@ -142,7 +142,10 @@ public class FileManager {
      * @param fileName File name
      * @return Base name
      */
-    private static String getBaseName(String fileName) {
+    public static String getBaseName(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
         int lastDot = fileName.lastIndexOf('.');
         if (lastDot > 0) {
             return fileName.substring(0, lastDot);
@@ -151,16 +154,61 @@ public class FileManager {
     }
     
     /**
+     * Gets the base name of a file (without extension).
+     * @param file File object
+     * @return Base name without extension
+     */
+    public static String getBaseName(File file) {
+        if (file == null) {
+            return "";
+        }
+        return getBaseName(file.getName());
+    }
+    
+    /**
      * Gets the extension of a file (including the dot).
      * @param fileName File name
      * @return Extension (e.g., ".png") or empty string if no extension
      */
     private static String getExtension(String fileName) {
+        if (fileName == null) {
+            return "";
+        }
         int lastDot = fileName.lastIndexOf('.');
         if (lastDot > 0 && lastDot < fileName.length() - 1) {
             return fileName.substring(lastDot);
         }
         return "";
     }
+    
+    /**
+     * Ensures a file path has the specified extension.
+     * If the path already has the extension, returns it unchanged.
+     * Otherwise, appends the extension.
+     * @param filePath File path
+     * @param extension Extension to ensure (with or without leading dot, e.g., ".png" or "png")
+     * @return File path with the extension
+     */
+    public static String ensureExtension(String filePath, String extension) {
+        if (StringUtils.isEmpty(filePath)) {
+            return filePath;
+        }
+        
+        // Normalize extension (ensure it starts with a dot)
+        String normalizedExtension = extension;
+        if (!normalizedExtension.startsWith(".")) {
+            normalizedExtension = "." + normalizedExtension;
+        }
+        
+        // Check if path already has this extension (case-insensitive)
+        String lowerPath = filePath.toLowerCase();
+        String lowerExt = normalizedExtension.toLowerCase();
+        if (lowerPath.endsWith(lowerExt)) {
+            return filePath;
+        }
+        
+        return filePath + normalizedExtension;
+    }
+    
 }
 

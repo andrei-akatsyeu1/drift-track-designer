@@ -1,5 +1,7 @@
 package com.trackdraw.model;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.ArrayList;
@@ -26,7 +28,7 @@ public class ShapeSequence {
     }
 
     public ShapeSequence(String name) {
-        this.name = name != null ? name : "";
+        this.name = StringUtils.defaultString(name);
         this.shapes = new ArrayList<>();
         this.initialAlignment = null;
         this.active = true; // Default to active
@@ -46,7 +48,7 @@ public class ShapeSequence {
     }
 
     public void setName(String name) {
-        this.name = name != null ? name : "";
+        this.name = StringUtils.defaultString(name);
     }
 
     /**
@@ -136,28 +138,7 @@ public class ShapeSequence {
      * This is needed to avoid modifying the original shape during validation.
      */
     private ShapeInstance createTempShapeCopy(ShapeInstance original) {
-        // Create a copy with the same key and color properties for validation
-        ShapeInstance copy = null;
-        if (original instanceof com.trackdraw.model.AnnularSector) {
-            com.trackdraw.model.AnnularSector sector = (com.trackdraw.model.AnnularSector) original;
-            copy = new com.trackdraw.model.AnnularSector(
-                    sector.getKey(), sector.getExternalDiameter(),
-                    sector.getAngleDegrees(), sector.getWidth());
-        } else if (original instanceof com.trackdraw.model.Rectangle) {
-            com.trackdraw.model.Rectangle rect = (com.trackdraw.model.Rectangle) original;
-            copy = new com.trackdraw.model.Rectangle(
-                    rect.getKey(), rect.getLength(), rect.getWidth());
-        } else if (original instanceof com.trackdraw.model.HalfCircle) {
-            com.trackdraw.model.HalfCircle halfCircle = (com.trackdraw.model.HalfCircle) original;
-            copy = new com.trackdraw.model.HalfCircle(
-                    halfCircle.getKey(), halfCircle.getDiameter());
-        } else {
-            return original;// Fallback
-        }
-        copy.setRed(original.isRed());
-        copy.setForceInvertColor(original.isForceInvertColor());
-        copy.setOrientation(original.getOrientation());
-        return copy;
+        return original.copy();
     }
 
     /**
@@ -207,6 +188,63 @@ public class ShapeSequence {
      */
     public void clear() {
         shapes.clear();
+    }
+
+    /**
+     * Deactivates all shapes in the sequence.
+     */
+    public void deactivateAllShapes() {
+        for (ShapeInstance shape : shapes) {
+            shape.setActive(false);
+        }
+    }
+
+    /**
+     * Activates the shape at the specified index and deactivates all others.
+     * @param index Index of the shape to activate
+     */
+    public void activateShape(int index) {
+        deactivateAllShapes();
+        if (index >= 0 && index < shapes.size()) {
+            ShapeInstance shape = shapes.get(index);
+            if (shape != null) {
+                shape.setActive(true);
+            }
+        }
+    }
+
+    /**
+     * Gets the active shape in the sequence.
+     * @return The first active ShapeInstance, or null if none is active
+     */
+    public ShapeInstance getActiveShape() {
+        for (ShapeInstance shape : shapes) {
+            if (shape.isActive()) {
+                return shape;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Gets the index of the active shape in the sequence.
+     * @return Index of the first active shape, or -1 if none is active
+     */
+    public int getActiveShapeIndex() {
+        for (int i = 0; i < shapes.size(); i++) {
+            if (shapes.get(i).isActive()) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Checks if any shape in the sequence is active.
+     * @return true if at least one shape is active, false otherwise
+     */
+    public boolean hasActiveShape() {
+        return getActiveShape() != null;
     }
 
     public boolean isActive() {
@@ -454,6 +492,73 @@ public class ShapeSequence {
         }
 
         return currentAlignPosition;
+    }
+
+    /**
+     * Gets all align positions for shapes in this sequence.
+     * Traverses the sequence starting from the initial position and collects all align positions.
+     * 
+     * @param initialPos Initial alignment position for the first shape
+     * @param g2d Graphics2D context for calculating positions (can be a temporary/dummy context)
+     * @return List of align positions, one for each shape
+     */
+    public List<AlignPosition> getAllAlignPositions(AlignPosition initialPos, Graphics2D g2d) {
+        List<AlignPosition> positions = new ArrayList<>();
+        if (shapes.isEmpty() || initialPos == null) {
+            return positions;
+        }
+
+        AlignPosition currentPos = initialPos;
+        for (ShapeInstance shape : shapes) {
+            positions.add(new AlignPosition(currentPos.getX(), currentPos.getY(), currentPos.getAngle()));
+            shape.setAlignPosition(currentPos);
+            currentPos = shape.draw(g2d);
+        }
+        return positions;
+    }
+
+    /**
+     * Calculates the bounding box of this sequence.
+     * Traverses all shapes and collects their align positions to determine min/max bounds.
+     * 
+     * @param initialPos Initial alignment position for the first shape
+     * @param g2d Graphics2D context for calculating positions (can be a temporary/dummy context)
+     * @param padding Padding to add around the bounds (in current scale units)
+     * @return Rectangle2D.Double representing the bounds, or null if sequence is empty
+     */
+    public java.awt.geom.Rectangle2D.Double calculateBounds(AlignPosition initialPos, Graphics2D g2d, double padding) {
+        if (shapes.isEmpty() || initialPos == null) {
+            return null;
+        }
+
+        List<AlignPosition> positions = getAllAlignPositions(initialPos, g2d);
+        if (positions.isEmpty()) {
+            return null;
+        }
+
+        double minX = Double.MAX_VALUE;
+        double minY = Double.MAX_VALUE;
+        double maxX = Double.MIN_VALUE;
+        double maxY = Double.MIN_VALUE;
+
+        for (AlignPosition pos : positions) {
+            minX = Math.min(minX, pos.getX());
+            minY = Math.min(minY, pos.getY());
+            maxX = Math.max(maxX, pos.getX());
+            maxY = Math.max(maxY, pos.getY());
+        }
+
+        if (minX == Double.MAX_VALUE) {
+            return null;
+        }
+
+        // Add padding
+        minX = minX - padding;
+        minY = minY - padding;
+        maxX = maxX + padding;
+        maxY = maxY + padding;
+
+        return new java.awt.geom.Rectangle2D.Double(minX, minY, maxX - minX, maxY - minY);
     }
 }
 

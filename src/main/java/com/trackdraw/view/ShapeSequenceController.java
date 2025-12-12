@@ -2,8 +2,6 @@ package com.trackdraw.view;
 
 import com.trackdraw.config.ShapeConfig;
 import com.trackdraw.model.AnnularSector;
-import com.trackdraw.model.HalfCircle;
-import com.trackdraw.model.Rectangle;
 import com.trackdraw.model.ShapeInstance;
 import com.trackdraw.model.ShapeSequence;
 import java.util.function.Consumer;
@@ -152,18 +150,8 @@ public class ShapeSequenceController {
         
         int selectedIndex = shapeListPanel.getSelectedIndex();
         
-        // Deactivate all shapes
-        for (ShapeInstance shape : activeSequence.getShapes()) {
-            shape.setActive(false);
-        }
-        
-        // Activate selected shape
-        if (selectedIndex >= 0 && selectedIndex < activeSequence.size()) {
-            ShapeInstance selectedShape = activeSequence.getShape(selectedIndex);
-            if (selectedShape != null) {
-                selectedShape.setActive(true);
-            }
-        }
+        // Deactivate all shapes and activate selected shape
+        activeSequence.activateShape(selectedIndex);
         
         // Update list display (without triggering selection events)
         shapeListPanel.updateShapeList();
@@ -202,18 +190,7 @@ public class ShapeSequenceController {
      * Creates a new ShapeInstance from a template.
      */
     private ShapeInstance createShapeInstance(ShapeInstance template) {
-        if (template instanceof AnnularSector) {
-            AnnularSector sector = (AnnularSector) template;
-            return new AnnularSector(sector.getKey(), sector.getExternalDiameter(), 
-                sector.getAngleDegrees(), sector.getWidth());
-        } else if (template instanceof Rectangle) {
-            Rectangle rect = (Rectangle) template;
-            return new Rectangle(rect.getKey(), rect.getLength(), rect.getWidth());
-        } else if (template instanceof HalfCircle) {
-            HalfCircle halfCircle = (HalfCircle) template;
-            return new HalfCircle(halfCircle.getKey(), halfCircle.getDiameter());
-        }
-        throw new IllegalArgumentException("Unknown shape type: " + template.getType());
+        return template.copy();
     }
 }
 

@@ -36,38 +36,29 @@ public class ShapeSequencePanel extends JPanel {
         setupLayout();
     }
     
-    /**
-     * Sets a larger font for a button.
-     * Uses a font that supports Unicode characters well.
-     * @param button Button to set font for
-     */
-    private void setButtonFont(JButton button) {
-        // Use a font that supports Unicode well, with larger size
-        Font largerFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
-        button.setFont(largerFont);
-    }
-    
     private void initializeComponents() {
         newSeqField = new JTextField(15);
         newSeqField.setToolTipText("Name for new sequence");
         
+        Font buttonFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
+        
         addButton = new JButton("✚");
-        setButtonFont(addButton);
+        addButton.setFont(buttonFont);
         addButton.setToolTipText("Add new sequence");
         addButton.addActionListener(e -> addNewSequence());
         
         addFromShapeButton = new JButton("✚🔗");
-        setButtonFont(addFromShapeButton);
+        addFromShapeButton.setFont(buttonFont);
         addFromShapeButton.setToolTipText("Add new sequence from active shape");
         addFromShapeButton.addActionListener(e -> addSequenceFromShape());
         
         deleteButton = new JButton("🗑");
-        setButtonFont(deleteButton);
+        deleteButton.setFont(buttonFont);
         deleteButton.setToolTipText("Delete active sequence");
         deleteButton.addActionListener(e -> deleteSelectedSequence());
         
         invertAlignmentButton = new JButton("↻"); // Unicode rotate symbol
-        setButtonFont(invertAlignmentButton);
+        invertAlignmentButton.setFont(buttonFont);
         invertAlignmentButton.setToolTipText("Invert alignment (only for sequences linked to shapes)");
         invertAlignmentButton.addActionListener(e -> toggleInvertAlignment());
         
@@ -250,13 +241,7 @@ public class ShapeSequencePanel extends JPanel {
         }
         
         // Find the active shape in the active sequence
-        ShapeInstance activeShape = null;
-        for (ShapeInstance shape : activeSeq.getShapes()) {
-            if (shape.isActive()) {
-                activeShape = shape;
-                break;
-            }
-        }
+        ShapeInstance activeShape = activeSeq.getActiveShape();
         
         if (activeShape == null) {
             if (statusMessageHandler != null) {

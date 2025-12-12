@@ -1,5 +1,7 @@
 package com.trackdraw.view;
 
+import org.apache.commons.lang3.StringUtils;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -24,10 +26,7 @@ public class StatusBar extends JPanel {
      * @param message Status message to display
      */
     public void setStatus(String message) {
-        if (message == null) {
-            message = "Ready";
-        }
-        statusLabel.setText(message);
+        statusLabel.setText(StringUtils.defaultIfBlank(message, "Ready"));
     }
     
     /**

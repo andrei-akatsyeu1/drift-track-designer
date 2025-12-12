@@ -48,9 +48,11 @@ public class ScaleControl extends JPanel {
         // Label
         add(new JLabel("  " + labelText));
         
+        Font buttonFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
+        
         // Minus button
         JButton scaleMinusButton = new JButton("-");
-        setButtonFont(scaleMinusButton);
+        scaleMinusButton.setFont(buttonFont);
         scaleMinusButton.setToolTipText("Decrease " + labelText.toLowerCase() + " by 10%");
         scaleMinusButton.addActionListener(e -> changeScale(-0.1));
         add(scaleMinusButton);
@@ -60,21 +62,10 @@ public class ScaleControl extends JPanel {
         
         // Plus button
         JButton scalePlusButton = new JButton("+");
-        setButtonFont(scalePlusButton);
+        scalePlusButton.setFont(buttonFont);
         scalePlusButton.setToolTipText("Increase " + labelText.toLowerCase() + " by 10%");
         scalePlusButton.addActionListener(e -> changeScale(0.1));
         add(scalePlusButton);
-    }
-    
-    /**
-     * Sets a larger font for a button.
-     * Uses a font that supports Unicode characters well.
-     * @param button Button to set font for
-     */
-    private void setButtonFont(JButton button) {
-        // Use a font that supports Unicode well, with larger size
-        Font largerFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
-        button.setFont(largerFont);
     }
     
     /**

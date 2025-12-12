@@ -2,7 +2,6 @@ package com.trackdraw.view;
 
 import com.trackdraw.config.GlobalScale;
 import com.trackdraw.model.AlignPosition;
-import com.trackdraw.model.ShapeInstance;
 import com.trackdraw.model.ShapeSequence;
 import com.trackdraw.report.ShapeReportGenerator;
 
@@ -111,8 +110,14 @@ public class ImageExporter {
                         continue;
                     }
                     
-                    // Draw sequence with export colors
-                    drawSequenceForExport(g2d, sequence, initialAlignPosition, showKeys);
+                    // Draw sequence with export colors (temporarily set active, use regular draw, then reset)
+                    boolean originalActive = sequence.isActive();
+                    try {
+                        sequence.setActive(true);
+                        sequence.drawAll(g2d, initialAlignPosition, showKeys);
+                    } finally {
+                        sequence.setActive(originalActive);
+                    }
                 }
                 
                 // Draw shapes report if enabled
@@ -203,21 +208,13 @@ public class ImageExporter {
                     continue;
                 }
                 
-                // Traverse shapes to collect all align positions
-                AlignPosition currentPos = initialPos;
-                for (ShapeInstance shape : sequence.getShapes()) {
-                    // Collect align position
-                    double alignX = currentPos.getX();
-                    double alignY = currentPos.getY();
-                    
-                    minX = Math.min(minX, alignX);
-                    minY = Math.min(minY, alignY);
-                    maxX = Math.max(maxX, alignX);
-                    maxY = Math.max(maxY, alignY);
-                    
-                    // Calculate next position by drawing (public method)
-                    shape.setAlignPosition(currentPos);
-                    currentPos = shape.draw(tempG2d);
+                // Use ShapeSequence method to get all align positions
+                List<AlignPosition> positions = sequence.getAllAlignPositions(initialPos, tempG2d);
+                for (AlignPosition pos : positions) {
+                    minX = Math.min(minX, pos.getX());
+                    minY = Math.min(minY, pos.getY());
+                    maxX = Math.max(maxX, pos.getX());
+                    maxY = Math.max(maxY, pos.getY());
                 }
             }
         } finally {
@@ -263,59 +260,6 @@ public class ImageExporter {
         return null;
     }
     
-    /**
-     * Draws a sequence with export colors (active schema, ignore active shape colors).
-     */
-    private static void drawSequenceForExport(Graphics2D g2d, ShapeSequence sequence,
-                                               AlignPosition initialAlignPosition,
-                                               boolean showKeys) {
-        if (sequence.isEmpty()) {
-            return;
-        }
-        
-        AlignPosition currentAlignPosition = initialAlignPosition;
-        
-        for (ShapeInstance shape : sequence.getShapes()) {
-            // Calculate export colors (active schema for all sequences, ignore active shape colors)
-            Color[] colors = calculateExportColors(shape);
-            shape.setContourColor(colors[0]);
-            shape.setInfillColor(colors[1]);
-            
-            // Set align position
-            shape.setAlignPosition(currentAlignPosition);
-            
-            // Draw the shape
-            currentAlignPosition = shape.draw(g2d);
-            
-            // Draw key if enabled
-            if (showKeys) {
-                shape.drawText(g2d, true);
-            }
-        }
-    }
-    
-    /**
-     * Calculates colors for export (active schema for all sequences, ignore active shape colors).
-     */
-    private static Color[] calculateExportColors(ShapeInstance shape) {
-        boolean isRed = shape.getEffectiveIsRed();
-        
-        Color contourColor;
-        Color infillColor;
-        
-        // Always use active schema colors (ignore sequence active state)
-        if (isRed) {
-            // Red base color: bright red (active schema)
-            contourColor = Color.RED;
-            infillColor = Color.RED;
-        } else {
-            // White/black base color: dark gray contour, white infill (active schema)
-            contourColor = new Color(64, 64, 64); // Dark gray
-            infillColor = Color.WHITE;
-        }
-        
-        return new Color[]{contourColor, infillColor};
-    }
     
     /**
      * Calculates the height needed for the shapes report based on actual shape types count.

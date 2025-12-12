@@ -1,5 +1,7 @@
 package com.trackdraw.model;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
@@ -121,6 +123,21 @@ public abstract class ShapeInstance {
      * @return shape type
      */
     public abstract String getType();
+    
+    /**
+     * Creates a copy of this shape instance with the same properties.
+     * The copy will have a new UUID but all other properties (key, dimensions, colors, orientation, etc.) are copied.
+     * @return A new ShapeInstance that is a copy of this one
+     */
+    public abstract ShapeInstance copy();
+    
+    /**
+     * Resets the colors to default values (black contour, white infill).
+     */
+    public void resetColors() {
+        this.contourColor = Color.BLACK;
+        this.infillColor = Color.WHITE;
+    }
     
     /**
      * Sets up the graphics transform and colors for drawing.
@@ -248,7 +265,7 @@ public abstract class ShapeInstance {
      * @param showKeys Whether to show the key text
      */
     public void drawText(Graphics2D g2d, boolean showKeys) {
-        if (!showKeys || key == null || key.isEmpty()) {
+        if (!showKeys || StringUtils.isEmpty(key)) {
             return;
         }
         

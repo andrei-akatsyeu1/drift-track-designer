@@ -1,5 +1,7 @@
 package com.trackdraw.config;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.*;
 import java.util.*;
 
@@ -83,7 +85,7 @@ public class AllowedCombinationsLoader {
             
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
-                if (line.isEmpty()) {
+                if (StringUtils.isEmpty(line)) {
                     continue;
                 }
                 

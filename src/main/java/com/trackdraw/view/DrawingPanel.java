@@ -1,5 +1,7 @@
 package com.trackdraw.view;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.trackdraw.config.GlobalScale;
 import com.trackdraw.model.AlignPosition;
 import com.trackdraw.model.ShapeSequence;
@@ -151,7 +153,7 @@ public class DrawingPanel extends JPanel {
      */
     public void setBackgroundImage(String imagePath) {
         this.backgroundImagePath = imagePath;
-        if (imagePath != null && !imagePath.isEmpty()) {
+        if (StringUtils.isNotEmpty(imagePath)) {
             try {
                 File imageFile = new File(imagePath);
                 if (imageFile.exists()) {

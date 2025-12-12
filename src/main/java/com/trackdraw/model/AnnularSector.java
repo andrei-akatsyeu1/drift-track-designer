@@ -4,6 +4,7 @@ import com.trackdraw.config.GlobalScale;
 
 import java.awt.*;
 import java.awt.geom.Arc2D;
+import java.util.UUID;
 
 /**
  * Represents an annular sector (ring segment) shape.
@@ -59,6 +60,20 @@ public class AnnularSector extends ShapeInstance {
      */
     public double getInternalDiameter() {
         return externalDiameter - 2 * width;
+    }
+    
+    @Override
+    public ShapeInstance copy() {
+        AnnularSector copy = new AnnularSector(key, externalDiameter, angleDegrees, width);
+        copy.setId(UUID.randomUUID()); // New UUID
+        copy.setOrientation(orientation);
+        copy.setRed(isRed);
+        copy.setForceInvertColor(forceInvertColor);
+        copy.setContourColor(contourColor);
+        copy.setInfillColor(infillColor);
+        copy.setActive(active);
+        copy.setAlignPosition(alignPosition != null ? new AlignPosition(alignPosition.getX(), alignPosition.getY(), alignPosition.getAngle()) : null);
+        return copy;
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.trackdraw.config;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.trackdraw.model.AnnularSector;
 import com.trackdraw.model.Rectangle;
 import com.trackdraw.model.HalfCircle;
@@ -50,7 +52,7 @@ public class SequenceManager {
         ProjectData projectData = new ProjectData();
         projectData.setSequences(sequenceDataList);
         
-        if (backgroundImagePath != null && !backgroundImagePath.isEmpty()) {
+        if (StringUtils.isNotEmpty(backgroundImagePath)) {
             BackgroundImageData bgImage = new BackgroundImageData(backgroundImagePath, backgroundImageScale);
             projectData.setBackgroundImage(bgImage);
         }
@@ -83,7 +85,7 @@ public class SequenceManager {
         File file = new File(path);
         
         if (!file.exists()) {
-            return new LoadResult(new ArrayList<>(), null, 1.0);
+            return LoadResult.empty();
         }
         
         try (Reader reader = new FileReader(file, java.nio.charset.StandardCharsets.UTF_8)) {
@@ -107,7 +109,7 @@ public class SequenceManager {
                     );
                     
                     if (sequenceDataList == null) {
-                        return new LoadResult(new ArrayList<>(), null, 1.0);
+                        return LoadResult.empty();
                     }
                     
                     List<ShapeSequence> sequences = convertSequencesFromData(sequenceDataList);
@@ -116,7 +118,7 @@ public class SequenceManager {
             }
         }
         
-        return new LoadResult(new ArrayList<>(), null, 1.0);
+        return LoadResult.empty();
     }
     
     /**
@@ -131,6 +133,10 @@ public class SequenceManager {
             this.sequences = sequences;
             this.backgroundImagePath = backgroundImagePath;
             this.backgroundImageScale = backgroundImageScale;
+        }
+        
+        public static LoadResult empty() {
+            return new LoadResult(new ArrayList<>(), null, 1.0);
         }
         
         public List<ShapeSequence> getSequences() {

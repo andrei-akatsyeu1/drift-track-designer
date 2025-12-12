@@ -52,8 +52,10 @@ public class ShapePalettePanel extends JPanel {
         
         // Add Remove and Invert Color buttons at the bottom, wrapped in a FlowLayout panel to prevent full width
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        Font buttonFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
+        
         JButton removeButton = new JButton("🗑");
-        setButtonFont(removeButton);
+        removeButton.setFont(buttonFont);
         removeButton.setToolTipText("Remove selected or last shape");
         removeButton.addActionListener(e -> {
             if (removeHandler != null) {
@@ -63,7 +65,7 @@ public class ShapePalettePanel extends JPanel {
         buttonPanel.add(removeButton);
         
         JButton invertColorButton = new JButton("↻🎨");
-        setButtonFont(invertColorButton);
+        invertColorButton.setFont(buttonFont);
         invertColorButton.setToolTipText("Invert color of selected shape");
         invertColorButton.addActionListener(e -> {
             if (invertColorHandler != null) {
@@ -98,16 +100,6 @@ public class ShapePalettePanel extends JPanel {
         this.invertColorHandler = handler;
     }
     
-    /**
-     * Sets a larger font for a button.
-     * Uses a font that supports Unicode characters well.
-     * @param button Button to set font for
-     */
-    private void setButtonFont(JButton button) {
-        // Use a font that supports Unicode well, with larger size
-        Font largerFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
-        button.setFont(largerFont);
-    }
     
     /**
      * Creates a button with fixed size.

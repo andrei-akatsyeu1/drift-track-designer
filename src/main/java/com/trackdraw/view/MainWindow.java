@@ -1,12 +1,15 @@
 package com.trackdraw.view;
 
+import org.apache.commons.lang3.StringUtils;
+
+import com.trackdraw.config.FileManager;
 import com.trackdraw.config.SequenceManager;
 import com.trackdraw.config.ShapeConfig;
 import com.trackdraw.model.ShapeSequence;
 import com.trackdraw.report.ShapeReportGenerator;
-import java.awt.image.BufferedImage;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -40,6 +43,10 @@ public class MainWindow extends JFrame {
     private List<ShapeSequence> allSequences;
     private ShapeSequence activeSequence;
     private String loadedJsonFileName; // Name of loaded JSON file (without extension)
+    
+    // Status message timeout constants
+    private static final int STATUS_SHORT = 3000;
+    private static final int STATUS_LONG = 5000;
     
     public MainWindow() {
         initializeComponents();
@@ -90,8 +97,7 @@ public class MainWindow extends JFrame {
         
         // Measurement tool checkbox
         measureCheckBox = new JCheckBox("📏");
-        Font measureFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
-        measureCheckBox.setFont(measureFont);
+        measureCheckBox.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 20));
         measureCheckBox.setToolTipText("Measurement Tool");
         measureCheckBox.addActionListener(e -> {
             boolean active = measureCheckBox.isSelected();
@@ -112,7 +118,7 @@ public class MainWindow extends JFrame {
         
         // Help button with keyboard shortcuts tooltip
         JButton helpButton = new JButton("?");
-        helpButton.setFont(measureFont);
+        helpButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 20));
             String tooltipText = "<html><b>Keyboard Shortcuts:</b><br>" +
             "<b>Canvas Panning:</b><br>" +
             "Left Mouse Drag: Pan canvas<br><br>" +
@@ -150,9 +156,7 @@ public class MainWindow extends JFrame {
         
         // Clear button
         JButton clearButton = new JButton("🗑");
-        // Use a font that supports Unicode well, with larger size
-        Font largerFont = new Font(Font.SANS_SERIF, Font.PLAIN, 20);
-        clearButton.setFont(largerFont);
+        clearButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 20));
         clearButton.setToolTipText("Clear active sequence");
         clearButton.addActionListener(e -> sequenceController.clearSequence());
         sequencePanel.add(clearButton, BorderLayout.SOUTH);
@@ -232,11 +236,9 @@ public class MainWindow extends JFrame {
             
             // Select the active shape in the shape list if there is one
             if (activeSequence != null) {
-                for (int i = 0; i < activeSequence.size(); i++) {
-                    if (activeSequence.getShape(i) != null && activeSequence.getShape(i).isActive()) {
-                        shapeListPanel.setSelectedIndex(i);
-                        break;
-                    }
+                int activeShapeIndex = activeSequence.getActiveShapeIndex();
+                if (activeShapeIndex >= 0) {
+                    shapeListPanel.setSelectedIndex(activeShapeIndex);
                 }
             }
             
@@ -250,9 +252,7 @@ public class MainWindow extends JFrame {
         );
         
         // Setup status message handler for shape sequence panel
-        shapeSequencePanel.setStatusMessageHandler(message -> {
-            statusBar.setStatus(message, 3000);
-        });
+        shapeSequencePanel.setStatusMessageHandler(message -> statusBar.setStatus(message, STATUS_SHORT));
         
         // Initialize sequences list with default "Main" sequence
         shapeSequencePanel.setSequences(allSequences);
@@ -334,37 +334,99 @@ public class MainWindow extends JFrame {
         setJMenuBar(menuBar);
     }
     
+    // ========== Utility Methods ==========
+    
+    /**
+     * Shows a status message with default short timeout.
+     * @param message Status message to display
+     */
+    private void showStatus(String message) {
+        statusBar.setStatus(message, STATUS_SHORT);
+    }
+    
+    /**
+     * Shows an error status message with default long timeout.
+     * @param message Error message to display
+     */
+    private void showError(String message) {
+        statusBar.setStatus(message, STATUS_LONG);
+    }
+    
+    /**
+     * Creates and configures a file chooser dialog.
+     * @param defaultDirectory Default directory to open
+     * @param dialogTitle Title of the dialog
+     * @param filter File filter (can be null)
+     * @param defaultFile Default file to select (can be null)
+     * @return Configured JFileChooser
+     */
+    private JFileChooser createFileChooser(File defaultDirectory, String dialogTitle, 
+                                           FileNameExtensionFilter filter, File defaultFile) {
+        JFileChooser fileChooser = new JFileChooser();
+        if (defaultDirectory != null) {
+            fileChooser.setCurrentDirectory(defaultDirectory);
+        }
+        fileChooser.setDialogTitle(dialogTitle);
+        if (filter != null) {
+            fileChooser.setFileFilter(filter);
+        }
+        if (defaultFile != null) {
+            fileChooser.setSelectedFile(defaultFile);
+        }
+        return fileChooser;
+    }
+    
+    /**
+     * Shows a file chooser dialog and returns the selected file if approved, null otherwise.
+     * @param fileChooser Configured file chooser
+     * @param isSaveDialog true for save dialog, false for open dialog
+     * @return Selected file if approved, null otherwise
+     */
+    private File showFileChooserAndGetFile(JFileChooser fileChooser, boolean isSaveDialog) {
+        int result = isSaveDialog ? fileChooser.showSaveDialog(this) : fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            return fileChooser.getSelectedFile();
+        }
+        return null;
+    }
+    
+    /**
+     * Clears the background image and resets its scale.
+     */
+    private void clearBackgroundImageAndScale() {
+        drawingPanel.setBackgroundImage(null);
+        backgroundImageScalePanel.setScale(1.0);
+    }
+    
     /**
      * Loads a background image.
      * If image is outside the images directory, copies it to images directory.
      */
     private void loadBackgroundImage() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(com.trackdraw.config.FileManager.getImagesDirectory());
-        fileChooser.setDialogTitle("Load Background Image");
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
-            "Image Files", "jpg", "jpeg", "png", "gif", "bmp"));
+        FileNameExtensionFilter filter = new FileNameExtensionFilter(
+            "Image Files", "jpg", "jpeg", "png", "gif", "bmp");
+        JFileChooser fileChooser = createFileChooser(
+            FileManager.getImagesDirectory(),
+            "Load Background Image",
+            filter,
+            null
+        );
         
-        int result = fileChooser.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
+        File selectedFile = showFileChooserAndGetFile(fileChooser, false);
+        if (selectedFile != null) {
             try {
-                File selectedFile = fileChooser.getSelectedFile();
-                File imagesDir = com.trackdraw.config.FileManager.getImagesDirectory();
-                
-                // If file is outside images directory, copy it
-                if (!selectedFile.getParentFile().equals(imagesDir)) {
-                    File copiedFile = com.trackdraw.config.FileManager.copyImageToImagesDirectory(selectedFile);
-                    drawingPanel.setBackgroundImage(copiedFile.getAbsolutePath());
-                } else {
-                    // File is already in images directory
-                    drawingPanel.setBackgroundImage(selectedFile.getAbsolutePath());
-                }
+                File imagesDir = FileManager.getImagesDirectory();
+                // If file is outside images directory, copy it; otherwise use it directly
+                File imageFile = !selectedFile.getParentFile().equals(imagesDir) 
+                    ? FileManager.copyImageToImagesDirectory(selectedFile)
+                    : selectedFile;
+                drawingPanel.setBackgroundImage(imageFile.getAbsolutePath());
                 
                 // Reset scale to 100% when loading new image
                 backgroundImageScalePanel.setScale(1.0);
-                statusBar.setStatus("Background image loaded successfully", 3000);
+                showStatus("Background image loaded successfully");
             } catch (IOException e) {
-                statusBar.setStatus("Error copying image: " + e.getMessage(), 5000);
+                showError("Error copying image: " + e.getMessage());
             }
         }
     }
@@ -373,79 +435,73 @@ public class MainWindow extends JFrame {
      * Clears the background image.
      */
     private void clearBackgroundImage() {
-        drawingPanel.setBackgroundImage(null);
-        backgroundImageScalePanel.setScale(1.0);
+        clearBackgroundImageAndScale();
     }
     
     /**
      * Loads sequences from a file.
      */
     private void loadSequences() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(com.trackdraw.config.FileManager.getSavesDirectory());
-        fileChooser.setDialogTitle("Load Sequences");
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("JSON Files", "json"));
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON Files", "json");
+        JFileChooser fileChooser = createFileChooser(
+            FileManager.getSavesDirectory(),
+            "Load Sequences",
+            filter,
+            null
+        );
         
-        int result = fileChooser.showOpenDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
+        File selectedFile = showFileChooserAndGetFile(fileChooser, false);
+        if (selectedFile != null) {
             try {
-                File selectedFile = fileChooser.getSelectedFile();
                 SequenceManager.LoadResult loadResult = sequenceManager.loadSequences(selectedFile.getAbsolutePath());
                 List<ShapeSequence> loadedSequences = loadResult.getSequences();
                 
                 if (loadedSequences.isEmpty()) {
-                    statusBar.setStatus("No sequences found in file", 3000);
+                    showStatus("No sequences found in file");
                     return;
                 }
                 
                 // Store the loaded JSON file name (without extension) for export
-                String fileName = selectedFile.getName();
-                int lastDot = fileName.lastIndexOf('.');
-                if (lastDot > 0) {
-                    loadedJsonFileName = fileName.substring(0, lastDot);
-                } else {
-                    loadedJsonFileName = fileName;
-                }
+                loadedJsonFileName = FileManager.getBaseName(selectedFile);
                 
                 // Replace current sequences
                 allSequences = loadedSequences;
                 shapeSequencePanel.setSequences(allSequences);
                 
                 // Load background image if present (convert relative path to absolute)
-                if (loadResult.getBackgroundImagePath() != null) {
-                    String absoluteImagePath = com.trackdraw.config.FileManager.toAbsoluteImagePath(loadResult.getBackgroundImagePath());
+                String bgImagePath = loadResult.getBackgroundImagePath();
+                if (StringUtils.isNotEmpty(bgImagePath)) {
+                    String absoluteImagePath = FileManager.toAbsoluteImagePath(bgImagePath);
                     if (absoluteImagePath != null) {
+                        double scale = loadResult.getBackgroundImageScale();
                         drawingPanel.setBackgroundImage(absoluteImagePath);
-                        drawingPanel.setBackgroundImageScale(loadResult.getBackgroundImageScale());
-                        backgroundImageScalePanel.setScale(loadResult.getBackgroundImageScale());
+                        drawingPanel.setBackgroundImageScale(scale);
+                        backgroundImageScalePanel.setScale(scale);
                     } else {
-                        // Image file not found, clear it
-                        drawingPanel.setBackgroundImage(null);
-                        backgroundImageScalePanel.setScale(1.0);
-                        statusBar.setStatus("Background image not found: " + loadResult.getBackgroundImagePath(), 5000);
+                        clearBackgroundImageAndScale();
+                        showError("Background image not found: " + bgImagePath);
                     }
                 } else {
-                    // Clear background image if not in file
-                    drawingPanel.setBackgroundImage(null);
-                    backgroundImageScalePanel.setScale(1.0);
+                    clearBackgroundImageAndScale();
                 }
                 
                 // Set first sequence as active if available
                 if (!allSequences.isEmpty()) {
                     ShapeSequence firstSeq = allSequences.get(0);
-                    firstSeq.setActive(true);
-                    for (int i = 1; i < allSequences.size(); i++) {
-                        allSequences.get(i).setActive(false);
+                    // Deactivate all sequences, then activate first
+                    for (ShapeSequence seq : allSequences) {
+                        seq.setActive(false);
                     }
+                    firstSeq.setActive(true);
                     activeSequence = firstSeq;
                     sequenceController.setActiveSequence(activeSequence);
                 }
                 
                 drawingCoordinator.drawAll();
                 
-                statusBar.setStatus(String.format("Loaded %d sequence(s) successfully", loadedSequences.size()), 3000);
+                showStatus(String.format("Loaded %d sequence(s) successfully", loadedSequences.size()));
             } catch (IOException e) {
-                statusBar.setStatus("Error loading sequences: " + e.getMessage(), 5000);
+                showError("Error loading sequences: " + e.getMessage());
             }
         }
     }
@@ -458,37 +514,37 @@ public class MainWindow extends JFrame {
         allSequences = shapeSequencePanel.getSequences();
         
         if (allSequences.isEmpty()) {
-            statusBar.setStatus("No sequences to save", 3000);
+            showStatus("No sequences to save");
             return;
         }
         
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setCurrentDirectory(com.trackdraw.config.FileManager.getSavesDirectory());
-        fileChooser.setDialogTitle("Save Sequences");
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("JSON Files", "json"));
-        fileChooser.setSelectedFile(new File("sequences.json"));
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON Files", "json");
+        JFileChooser fileChooser = createFileChooser(
+            FileManager.getSavesDirectory(),
+            "Save Sequences",
+            filter,
+            new File("sequences.json")
+        );
         
-        int result = fileChooser.showSaveDialog(this);
-        if (result == JFileChooser.APPROVE_OPTION) {
+        File selectedFile = showFileChooserAndGetFile(fileChooser, true);
+        if (selectedFile != null) {
             try {
-                String filePath = fileChooser.getSelectedFile().getAbsolutePath();
-                if (!filePath.toLowerCase().endsWith(".json")) {
-                    filePath += ".json";
-                }
+                String filePath = selectedFile.getAbsolutePath();
+                filePath = FileManager.ensureExtension(filePath, ".json");
                 
                 // Get background image path and convert to relative path
                 String bgImagePath = drawingPanel.getBackgroundImagePath();
                 String relativeImagePath = null;
-                if (bgImagePath != null && !bgImagePath.isEmpty()) {
-                    relativeImagePath = com.trackdraw.config.FileManager.toRelativeImagePath(bgImagePath);
+                if (StringUtils.isNotEmpty(bgImagePath)) {
+                    relativeImagePath = FileManager.toRelativeImagePath(bgImagePath);
                 }
                 double bgImageScale = drawingPanel.getBackgroundImageScale();
                 
                 sequenceManager.saveSequences(allSequences, relativeImagePath, bgImageScale, filePath);
                 
-                statusBar.setStatus(String.format("Saved %d sequence(s) successfully", allSequences.size()), 3000);
+                showStatus(String.format("Saved %d sequence(s) successfully", allSequences.size()));
             } catch (IOException e) {
-                statusBar.setStatus("Error saving sequences: " + e.getMessage(), 5000);
+                showError("Error saving sequences: " + e.getMessage());
             }
         }
     }
@@ -518,50 +574,37 @@ public class MainWindow extends JFrame {
             return;
         }
         
-        // Show file chooser
-        javax.swing.JFileChooser fileChooser = new javax.swing.JFileChooser();
-        fileChooser.setDialogTitle("Export Image");
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter(
-            "PNG Images", "png"));
-        
-        // Set default directory to export folder
-        fileChooser.setCurrentDirectory(com.trackdraw.config.FileManager.getExportDirectory());
-        
         // Set default file name: use loaded JSON file name if available, otherwise use active sequence name
         String defaultName = "export";
-        if (loadedJsonFileName != null && !loadedJsonFileName.isEmpty()) {
+        if (StringUtils.isNotEmpty(loadedJsonFileName)) {
             defaultName = loadedJsonFileName;
-        } else if (activeSequence != null && activeSequence.getName() != null && !activeSequence.getName().isEmpty()) {
+        } else if (activeSequence != null && StringUtils.isNotEmpty(activeSequence.getName())) {
             defaultName = activeSequence.getName();
         }
-        fileChooser.setSelectedFile(new File(defaultName + ".png"));
         
-        int result = fileChooser.showSaveDialog(this);
-        if (result != javax.swing.JFileChooser.APPROVE_OPTION) {
-            return;
-        }
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("PNG Images", "png");
+        JFileChooser fileChooser = createFileChooser(
+            FileManager.getExportDirectory(),
+            "Export Image",
+            filter,
+            new File(defaultName + ".png")
+        );
         
-        File file = fileChooser.getSelectedFile();
+        File file = showFileChooserAndGetFile(fileChooser, true);
         if (file == null) {
             return;
         }
         
         // Ensure .png extension
-        if (!file.getName().toLowerCase().endsWith(".png")) {
-            file = new File(file.getParent(), file.getName() + ".png");
-        }
+        String filePath = FileManager.ensureExtension(file.getAbsolutePath(), ".png");
+        file = new File(filePath);
         
         try {
-            // Get sequences and background image
-            List<ShapeSequence> sequences = shapeSequencePanel.getSequences();
-            BufferedImage backgroundImage = drawingPanel.getBackgroundImage();
-            double backgroundImageScale = drawingPanel.getBackgroundImageScale();
-            
             // Export
             ImageExporter.exportToPNG(
-                sequences,
-                backgroundImage,
-                backgroundImageScale,
+                shapeSequencePanel.getSequences(),
+                drawingPanel.getBackgroundImage(),
+                drawingPanel.getBackgroundImageScale(),
                 dialog.isShowBackgroundImage(),
                 dialog.isShowKey(),
                 dialog.isShapesReport(),
@@ -569,9 +612,9 @@ public class MainWindow extends JFrame {
                 file
             );
             
-            statusBar.setStatus("Image exported successfully: " + file.getName(), 3000);
+            showStatus("Image exported successfully: " + file.getName());
         } catch (Exception e) {
-            statusBar.setStatus("Export failed: " + e.getMessage(), 5000);
+            showError("Export failed: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -580,12 +623,9 @@ public class MainWindow extends JFrame {
      * Generates and displays the shape usage report.
      */
     private void showShapeReport() {
-        // Get all sequences
-        List<ShapeSequence> allSequences = shapeSequencePanel.getSequences();
-        
         // Generate report
         ShapeReportGenerator generator = new ShapeReportGenerator();
-        ShapeReportGenerator.Report report = generator.generateReport(allSequences);
+        ShapeReportGenerator.Report report = generator.generateReport(shapeSequencePanel.getSequences());
         
         // Display report in a dialog
         String reportText = report.formatReport();
