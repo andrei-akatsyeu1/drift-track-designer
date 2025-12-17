@@ -11,6 +11,7 @@ import com.trackdraw.report.ShapeReportGenerator;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
@@ -129,6 +130,8 @@ public class MainWindow extends JFrame {
             "Shift + Ctrl + Arrow Keys: Move all sequences by 1px<br>" +
             "+ / -: Rotate by 10°<br>" +
             "+ / - + Ctrl: Rotate by 1°<br><br>" +
+            "<b>Shape Management:</b><br>" +
+            "Delete / Backspace: Remove active shape<br><br>" +
             "<b>Global Scale:</b><br>" +
             "Mouse Wheel: Scale by 10%<br>" +
             "Mouse Wheel + Ctrl: Scale by 1%<br><br>" +
@@ -260,6 +263,9 @@ public class MainWindow extends JFrame {
         
         // Setup keyboard controls for adjusting alignment position
         keyboardController.setupKeyboardControls();
+        
+        // Setup Delete key to remove active shape
+        setupDeleteKeyBinding();
         
         // Setup shape list selection listener
         shapeListPanel.addSelectionListener(e -> {
@@ -564,6 +570,30 @@ public class MainWindow extends JFrame {
     }
     
     /**
+     * Sets up keyboard binding for Delete key to remove active shape.
+     */
+    private void setupDeleteKeyBinding() {
+        JRootPane rootPane = SwingUtilities.getRootPane(drawingPanel);
+        InputMap inputMap = rootPane != null 
+            ? rootPane.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW)
+            : drawingPanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap actionMap = rootPane != null 
+            ? rootPane.getActionMap()
+            : drawingPanel.getActionMap();
+        
+        // Delete key: remove active shape
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "removeShape");
+        inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0), "removeShape"); // Also handle Backspace
+        
+        actionMap.put("removeShape", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                sequenceController.removeSelectedOrLastShape();
+            }
+        });
+    }
+    
+    /**
      * Exports the canvas to a PNG image file.
      */
     private void exportImage() {
@@ -704,6 +734,22 @@ public class MainWindow extends JFrame {
      */
     public AlignmentKeyboardController getKeyboardController() {
         return keyboardController;
+    }
+    
+    /**
+     * Gets the sequence controller (for testing purposes).
+     * @return Sequence controller instance
+     */
+    public ShapeSequenceController getSequenceController() {
+        return sequenceController;
+    }
+    
+    /**
+     * Gets the shape list panel (for testing purposes).
+     * @return Shape list panel instance
+     */
+    public ShapeListPanel getShapeListPanel() {
+        return shapeListPanel;
     }
     
     public static void main(String[] args) {

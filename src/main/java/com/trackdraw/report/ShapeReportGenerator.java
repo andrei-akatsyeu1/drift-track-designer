@@ -1,10 +1,13 @@
 package com.trackdraw.report;
 
+import com.trackdraw.config.GlobalScale;
 import com.trackdraw.model.ShapeInstance;
 import com.trackdraw.model.ShapeSequence;
+import com.trackdraw.util.SequenceBoundsCalculator;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.awt.geom.Rectangle2D;
 import java.util.*;
 
 /**
@@ -197,7 +200,13 @@ public class ShapeReportGenerator {
             }
         }
         
-        return new Report(regularShapesWhite, regularShapesRed, complexShapes);
+        // Calculate sequence bounds (width and length) at current scale, then normalize to scale 1.0
+        Rectangle2D.Double bounds = SequenceBoundsCalculator.calculateSequenceBounds(sequences);
+        double currentScale = GlobalScale.getScale();
+        double width = bounds != null ? bounds.getWidth() / currentScale : 0.0;
+        double length = bounds != null ? bounds.getHeight() / currentScale : 0.0;
+        
+        return new Report(regularShapesWhite, regularShapesRed, complexShapes, width, length);
     }
     
     /**
@@ -208,13 +217,19 @@ public class ShapeReportGenerator {
         private final Map<String, Integer> regularShapesWhite;
         private final Map<String, Integer> regularShapesRed;
         private final Map<ComplexShape, Integer> complexShapes;
+        private final double width;
+        private final double length;
         
         public Report(Map<String, Integer> regularShapesWhite, 
                      Map<String, Integer> regularShapesRed,
-                     Map<ComplexShape, Integer> complexShapes) {
+                     Map<ComplexShape, Integer> complexShapes,
+                     double width,
+                     double length) {
             this.regularShapesWhite = new HashMap<>(regularShapesWhite);
             this.regularShapesRed = new HashMap<>(regularShapesRed);
             this.complexShapes = new HashMap<>(complexShapes);
+            this.width = width;
+            this.length = length;
         }
         
         /**
@@ -291,6 +306,12 @@ public class ShapeReportGenerator {
             sb.append(String.format("  Regular shapes (red): %d\n", totalRegularRed));
             sb.append(String.format("  Total regular shapes: %d\n", totalRegular));
             sb.append(String.format("  Total shapes: %d\n", totalComplex + totalRegular));
+            
+            // Add width and length
+            sb.append("\n");
+            sb.append("Dimensions:\n");
+            sb.append(String.format("  Width: %.2f\n", width));
+            sb.append(String.format("  Length: %.2f\n", length));
             
             return sb.toString();
         }

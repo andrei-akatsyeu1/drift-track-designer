@@ -313,6 +313,10 @@ public class ImageExporter {
         // - Header: 1 line
         // - Separator: 1 line
         // - Data rows: dataRowCount lines
+        // - Spacing before dimensions: 1 line
+        // - Dimensions title: 1 line
+        // - Width: 1 line
+        // - Length: 1 line
         // - Bottom padding: 10 * scale
         int lineHeight = 15 * scale;
         int topPadding = 10 * scale;
@@ -322,9 +326,13 @@ public class ImageExporter {
         int headerHeight = lineHeight;
         int separatorHeight = lineHeight;
         int dataRowsHeight = dataRowCount * lineHeight;
+        int spacingBeforeDimensions = lineHeight;
+        int dimensionsTitleHeight = lineHeight;
+        int dimensionsRowsHeight = lineHeight * 2; // Width and Length
         
         int totalHeight = topPadding + titleHeight + spacingAfterTitle + headerHeight + 
-                         separatorHeight + dataRowsHeight + bottomPadding;
+                         separatorHeight + dataRowsHeight + spacingBeforeDimensions +
+                         dimensionsTitleHeight + dimensionsRowsHeight + bottomPadding;
         
         return totalHeight;
     }
@@ -413,6 +421,14 @@ public class ImageExporter {
             g2d.drawString(String.valueOf(whiteCount), rowX, currentY);
             currentY += lineHeight;
         }
+        
+        // Add dimensions section
+        currentY += lineHeight; // Add spacing before dimensions
+        g2d.drawString("Dimensions:", x, currentY);
+        currentY += lineHeight;
+        g2d.drawString(String.format("  Width: %.2f", report.getWidth()), x, currentY);
+        currentY += lineHeight;
+        g2d.drawString(String.format("  Length: %.2f", report.getLength()), x, currentY);
     }
 }
 

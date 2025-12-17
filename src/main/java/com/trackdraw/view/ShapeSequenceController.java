@@ -95,6 +95,7 @@ public class ShapeSequenceController {
     
     /**
      * Removes the selected shape from the active sequence, or the last one if none is selected.
+     * After removal, activates the next shape (or previous if last was removed).
      */
     public void removeSelectedOrLastShape() {
         if (activeSequence == null || activeSequence.isEmpty()) {
@@ -120,10 +121,34 @@ public class ShapeSequenceController {
         
         activeSequence.removeShape(removeIndex);
         
+        // Determine which shape to activate next
+        int nextActiveIndex = -1;
+        if (!activeSequence.isEmpty()) {
+            // If there's a shape at the same index (next shape after removal), activate it
+            if (removeIndex < activeSequence.size()) {
+                nextActiveIndex = removeIndex;
+            } else {
+                // Otherwise, activate the previous shape (last one in the sequence)
+                nextActiveIndex = activeSequence.size() - 1;
+            }
+        }
+        
+        // Activate the next shape if available
+        if (nextActiveIndex >= 0) {
+            activeSequence.activateShape(nextActiveIndex);
+        }
+        
         shapeListPanel.updateShapeList();
         
-        // Clear selection
-        shapeListPanel.clearSelection();
+        // Select the active shape if available, otherwise activate last shape
+        if (nextActiveIndex >= 0) {
+            shapeListPanel.setSelectedIndex(nextActiveIndex);
+        } else if (!activeSequence.isEmpty()) {
+            // If sequence is not empty but no next index was set, activate last shape
+            int lastIndex = activeSequence.size() - 1;
+            activeSequence.activateShape(lastIndex);
+            shapeListPanel.setSelectedIndex(lastIndex);
+        }
         
         // Redraw (colors will be recalculated in drawAll)
         drawingCoordinator.drawAll();
