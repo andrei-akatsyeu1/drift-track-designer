@@ -5,6 +5,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.trackdraw.config.FileManager;
 import com.trackdraw.config.SequenceManager;
 import com.trackdraw.config.ShapeConfig;
+import com.trackdraw.config.ShapeLibrary;
 import com.trackdraw.model.ShapeSequence;
 import com.trackdraw.report.ShapeReportGenerator;
 
@@ -54,6 +55,7 @@ public class MainWindow extends JFrame {
         setupLayout();
         setupEventHandlers();
         loadShapes();
+        validateShapeLibrary();
         createShapePalettes();
     }
     
@@ -676,6 +678,23 @@ public class MainWindow extends JFrame {
             shapeConfig.loadShapes();
         } catch (IOException e) {
             System.err.println("Error loading shapes: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Validates the shape library at application startup.
+     * Throws RuntimeException if the library cannot be loaded or is invalid.
+     */
+    private void validateShapeLibrary() {
+        try {
+            ShapeLibrary library = new ShapeLibrary();
+            ShapeConfig config = new ShapeConfig();
+            config.loadShapes();
+            library.loadLibrary(config);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load shape library at application startup: " + e.getMessage(), e);
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Shape library validation failed at application startup: " + e.getMessage(), e);
         }
     }
     

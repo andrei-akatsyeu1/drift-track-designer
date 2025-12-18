@@ -1,6 +1,8 @@
 package com.trackdraw.report;
 
 import com.trackdraw.config.GlobalScale;
+import com.trackdraw.config.ShapeConfig;
+import com.trackdraw.config.ShapeLibrary;
 import com.trackdraw.model.ShapeInstance;
 import com.trackdraw.model.ShapeSequence;
 import com.trackdraw.util.SequenceBoundsCalculator;
@@ -8,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.awt.geom.Rectangle2D;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -15,6 +18,25 @@ import java.util.*;
  * Counts shapes by type and color, handling complex shapes from linked sequences.
  */
 public class ShapeReportGenerator {
+    private ShapeLibrary shapeLibrary;
+    
+    public ShapeReportGenerator() {
+        this.shapeLibrary = new ShapeLibrary();
+        try {
+            // Load ShapeConfig to validate against
+            ShapeConfig shapeConfig = new ShapeConfig();
+            shapeConfig.loadShapes();
+            
+            // Load and validate shape library
+            shapeLibrary.loadLibrary(shapeConfig);
+        } catch (IOException e) {
+            System.err.println("Failed to load shape library: " + e.getMessage());
+            throw new RuntimeException("Failed to load shape library", e);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Shape library validation failed: " + e.getMessage());
+            throw new RuntimeException("Shape library validation failed", e);
+        }
+    }
     
     /**
      * Represents a shape count entry in the report.
@@ -34,7 +56,18 @@ public class ShapeReportGenerator {
     /**
      * Represents a complex shape (linked shape + first shape of linked sequence).
      * Includes shape keys, orientations, and color.
-     * Order doesn't matter - pairs are normalized so (A, o1) + (B, o2) equals (B, o2) + (A, o1).
+     * 
+     * Normalization rules:
+     * - Always sort shapes by key alphabetically, keeping orientation with each shape
+     * - Display format always includes orientation signs: +key1+key2, +key1-key2, -key1+key2, or -key1-key2
+     * - When keys are equal, normalize by orientation (put +1 before -1)
+     * 
+     * Examples:
+     * - 15 (CCW) + 10 (CCW) → normalized to +10+15 (alphabetically sorted)
+     * - 10 (CW) + 15 (CCW) → normalized to -10+15 (alphabetically sorted, 10 is CW, 15 is CCW)
+     * - 15 (CCW) + 10 (CW) → normalized to -10+15 (alphabetically sorted, 10 is CW, 15 is CCW)
+     * - 10 (CCW) + 15 (CW) → normalized to +10-15 (alphabetically sorted, 10 is CCW, 15 is CW)
+     * - 10 (CCW) + 10 (CW) → normalized to +10-10 (same key, + before -)
      */
     @Data
     public static class ComplexShape {
@@ -46,24 +79,24 @@ public class ShapeReportGenerator {
         
         public ComplexShape(String parentShapeKey, int parentOrientation, 
                            String childShapeKey, int childOrientation, boolean isRed) {
-            // Normalize order: sort by shape key first, then by orientation if keys are equal
-            // This ensures (A, o1) + (B, o2) equals (B, o2) + (A, o1)
+            // Always normalize by sorting keys alphabetically, keeping orientation with each shape
             int keyCompare = parentShapeKey.compareTo(childShapeKey);
+            
             if (keyCompare < 0) {
-                // parentShapeKey < childShapeKey: keep order
+                // parentShapeKey < childShapeKey: keep order (already sorted)
                 this.shapeKey1 = parentShapeKey;
                 this.orientation1 = parentOrientation;
                 this.shapeKey2 = childShapeKey;
                 this.orientation2 = childOrientation;
             } else if (keyCompare > 0) {
-                // parentShapeKey > childShapeKey: swap
+                // parentShapeKey > childShapeKey: swap to sort alphabetically
                 this.shapeKey1 = childShapeKey;
                 this.orientation1 = childOrientation;
                 this.shapeKey2 = parentShapeKey;
                 this.orientation2 = parentOrientation;
             } else {
-                // Same shape key: sort by orientation
-                if (parentOrientation <= childOrientation) {
+                // Same key: normalize by orientation (put +1 before -1)
+                if (parentOrientation >= childOrientation) {
                     this.shapeKey1 = parentShapeKey;
                     this.orientation1 = parentOrientation;
                     this.shapeKey2 = childShapeKey;
@@ -76,6 +109,17 @@ public class ShapeReportGenerator {
                 }
             }
             this.isRed = isRed;
+        }
+        
+        /**
+         * Gets the display key for this complex shape.
+         * Format: always includes orientation signs: +key1+key2, +key1-key2, -key1+key2, or -key1-key2
+         * + = CCW (orientation 1), - = CW (orientation -1)
+         */
+        public String getDisplayKey() {
+            String sign1 = orientation1 == 1 ? "+" : "-";
+            String sign2 = orientation2 == 1 ? "+" : "-";
+            return sign1 + shapeKey1 + sign2 + shapeKey2;
         }
         
         @Override
@@ -149,8 +193,9 @@ public class ShapeReportGenerator {
                     
                     if (firstShapeOfLinked != null) {
                         // The linked shape + first shape of linked sequence form a complex shape
-                        // Determine color: use the first shape's color (which is opposite to linked shape)
-                        boolean isRed = firstShapeOfLinked.isRed();
+                        // Determine color: use the first shape's effective color (which is opposite to linked shape)
+                        // Use getEffectiveIsRed() to account for forceInvertColor
+                        boolean isRed = firstShapeOfLinked.getEffectiveIsRed();
                         
                         ComplexShape complexShape = new ComplexShape(
                             linkedShape.getKey(),
@@ -188,9 +233,9 @@ public class ShapeReportGenerator {
                     continue;
                 }
                 
-                // Count the shape
+                // Count the shape using effective color (accounts for forceInvertColor)
                 String shapeKey = shape.getKey();
-                boolean isRed = shape.isRed();
+                boolean isRed = shape.getEffectiveIsRed();
                 
                 if (isRed) {
                     regularShapesRed.put(shapeKey, regularShapesRed.getOrDefault(shapeKey, 0) + 1);
@@ -206,7 +251,7 @@ public class ShapeReportGenerator {
         double width = bounds != null ? bounds.getWidth() / currentScale : 0.0;
         double length = bounds != null ? bounds.getHeight() / currentScale : 0.0;
         
-        return new Report(regularShapesWhite, regularShapesRed, complexShapes, width, length);
+        return new Report(regularShapesWhite, regularShapesRed, complexShapes, width, length, shapeLibrary);
     }
     
     /**
@@ -219,17 +264,56 @@ public class ShapeReportGenerator {
         private final Map<ComplexShape, Integer> complexShapes;
         private final double width;
         private final double length;
+        private final ShapeLibrary shapeLibrary;
         
         public Report(Map<String, Integer> regularShapesWhite, 
                      Map<String, Integer> regularShapesRed,
                      Map<ComplexShape, Integer> complexShapes,
                      double width,
-                     double length) {
+                     double length,
+                     ShapeLibrary shapeLibrary) {
             this.regularShapesWhite = new HashMap<>(regularShapesWhite);
             this.regularShapesRed = new HashMap<>(regularShapesRed);
             this.complexShapes = new HashMap<>(complexShapes);
             this.width = width;
             this.length = length;
+            this.shapeLibrary = shapeLibrary;
+        }
+        
+        /**
+         * Calculates the missing count for a shape and color.
+         * Missing count = required count - available count from library.
+         * 
+         * @param shapeKey The shape key
+         * @param isRed true for red, false for white
+         * @param requiredCount The required count
+         * @return The missing count (can be negative if more are available than needed)
+         */
+        public int getMissingCount(String shapeKey, boolean isRed, int requiredCount) {
+            if (shapeLibrary == null) {
+                // If library is not loaded, return 0 (no missing count available)
+                return 0;
+            }
+            int availableCount = shapeLibrary.getCount(shapeKey, isRed);
+            return requiredCount - availableCount;
+        }
+        
+        /**
+         * Formats a count with missing count information.
+         * Format: "<count> (<missing count>)" if missing > 0, otherwise just "<count>"
+         * 
+         * @param shapeKey The shape key
+         * @param isRed true for red, false for white
+         * @param requiredCount The required count
+         * @return Formatted string
+         */
+        public String formatCountWithMissing(String shapeKey, boolean isRed, int requiredCount) {
+            int missing = getMissingCount(shapeKey, isRed, requiredCount);
+            if (missing > 0) {
+                return String.format("%d (%d)", requiredCount, missing);
+            } else {
+                return String.valueOf(requiredCount);
+            }
         }
         
         /**
@@ -248,8 +332,8 @@ public class ShapeReportGenerator {
                 ComplexShape complex = entry.getKey();
                 int count = entry.getValue();
                 
-                // Format complex shape as "key1+key2" for display
-                String complexKey = complex.getShapeKey1() + "+" + complex.getShapeKey2();
+                // Format complex shape with orientation signs: "key1+key2" or "key1-key2"
+                String complexKey = complex.getDisplayKey();
                 
                 if (complex.isRed()) {
                     redCounts.put(complexKey, redCounts.getOrDefault(complexKey, 0) + count);
@@ -267,7 +351,7 @@ public class ShapeReportGenerator {
             sb.append("Shapes Report:\n\n");
             
             // Table header
-            sb.append(String.format("%-15s %-8s %-8s\n", "Key", "Red", "White"));
+            sb.append(String.format("%-15s %-15s %-15s\n", "Key", "Red", "White"));
             sb.append("----------------------------------------\n");
             
             // Table rows
@@ -286,7 +370,11 @@ public class ShapeReportGenerator {
                 totalRed += redCount;
                 totalWhite += whiteCount;
                 
-                sb.append(String.format("%-15s %-8d %-8d\n", key, redCount, whiteCount));
+                // Format counts with missing information
+                String redCountStr = formatCountWithMissing(key, true, redCount);
+                String whiteCountStr = formatCountWithMissing(key, false, whiteCount);
+                
+                sb.append(String.format("%-15s %-15s %-15s\n", key, redCountStr, whiteCountStr));
             }
             
             // Total row

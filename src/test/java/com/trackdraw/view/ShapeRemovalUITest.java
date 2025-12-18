@@ -45,8 +45,8 @@ public class ShapeRemovalUITest extends BaseUITest {
     }
     
     @Test
-    @DisplayName("Removing middle shape should activate next shape")
-    public void testRemoveMiddleShapeActivatesNext() {
+    @DisplayName("Removing first shape should activate new first shape")
+    public void testRemoveFirstShapeActivatesNewFirst() {
         waitForUI();
         
         // Add three shapes
@@ -73,11 +73,47 @@ public class ShapeRemovalUITest extends BaseUITest {
         // Verify sequence now has 2 shapes
         assertThat(sequence.size()).isEqualTo(2);
         
-        // Verify the next shape (previously at index 1, now at index 0) is active
+        // Verify the new first shape (previously at index 1, now at index 0) is active
         assertThat(sequence.getActiveShapeIndex()).isEqualTo(0);
         assertThat(sequence.getShape(0).isActive()).isTrue();
         // Verify it's the shape that was previously at index 1 (key "10")
         assertThat(sequence.getShape(0).getKey()).isEqualTo("10");
+    }
+    
+    @Test
+    @DisplayName("Removing middle shape should activate previous shape")
+    public void testRemoveMiddleShapeActivatesPrevious() {
+        waitForUI();
+        
+        // Add three shapes
+        addShapesToSequence("05", "10", "15");
+        ShapeSequence sequence = mainWindow.getAllSequences().get(0);
+        
+        // Verify we have 3 shapes
+        assertThat(sequence.size()).isEqualTo(3);
+        
+        // Activate the middle shape (index 1)
+        sequence.activateShape(1);
+        mainWindow.getSequenceController().setActiveSequence(sequence);
+        mainWindow.getShapeListPanel().setSelectedIndex(1);
+        waitForUI();
+        
+        // Verify middle shape is active
+        assertThat(sequence.getShape(1).isActive()).isTrue();
+        assertThat(sequence.getActiveShapeIndex()).isEqualTo(1);
+        
+        // Remove the middle shape (index 1)
+        mainWindow.getSequenceController().removeSelectedOrLastShape();
+        waitForUI();
+        
+        // Verify sequence now has 2 shapes
+        assertThat(sequence.size()).isEqualTo(2);
+        
+        // Verify the previous shape (previously at index 0, still at index 0) is active
+        assertThat(sequence.getActiveShapeIndex()).isEqualTo(0);
+        assertThat(sequence.getShape(0).isActive()).isTrue();
+        // Verify it's the shape that was previously at index 0 (key "05")
+        assertThat(sequence.getShape(0).getKey()).isEqualTo("05");
     }
     
     @Test
@@ -156,10 +192,10 @@ public class ShapeRemovalUITest extends BaseUITest {
         // Verify we have 2 shapes
         assertThat(sequence.size()).isEqualTo(2);
         
-        // Activate the first shape
-        sequence.activateShape(0);
+        // Activate the second shape (index 1)
+        sequence.activateShape(1);
         mainWindow.getSequenceController().setActiveSequence(sequence);
-        mainWindow.getShapeListPanel().setSelectedIndex(0);
+        mainWindow.getShapeListPanel().setSelectedIndex(1);
         waitForUI();
         
         // Press Delete key
@@ -169,10 +205,10 @@ public class ShapeRemovalUITest extends BaseUITest {
         // Verify sequence now has 1 shape
         assertThat(sequence.size()).isEqualTo(1);
         
-        // Verify the next shape (previously at index 1, now at index 0) is active
+        // Verify the previous shape (previously at index 0, still at index 0) is active
         assertThat(sequence.getActiveShapeIndex()).isEqualTo(0);
         assertThat(sequence.getShape(0).isActive()).isTrue();
-        assertThat(sequence.getShape(0).getKey()).isEqualTo("10");
+        assertThat(sequence.getShape(0).getKey()).isEqualTo("05");
     }
     
     @Test
@@ -187,10 +223,10 @@ public class ShapeRemovalUITest extends BaseUITest {
         // Verify we have 2 shapes
         assertThat(sequence.size()).isEqualTo(2);
         
-        // Activate the first shape
-        sequence.activateShape(0);
+        // Activate the second shape (index 1)
+        sequence.activateShape(1);
         mainWindow.getSequenceController().setActiveSequence(sequence);
-        mainWindow.getShapeListPanel().setSelectedIndex(0);
+        mainWindow.getShapeListPanel().setSelectedIndex(1);
         waitForUI();
         
         // Press Backspace key
@@ -200,9 +236,10 @@ public class ShapeRemovalUITest extends BaseUITest {
         // Verify sequence now has 1 shape
         assertThat(sequence.size()).isEqualTo(1);
         
-        // Verify the next shape is active
+        // Verify the previous shape (previously at index 0, still at index 0) is active
         assertThat(sequence.getActiveShapeIndex()).isEqualTo(0);
         assertThat(sequence.getShape(0).isActive()).isTrue();
+        assertThat(sequence.getShape(0).getKey()).isEqualTo("05");
     }
     
     @Test

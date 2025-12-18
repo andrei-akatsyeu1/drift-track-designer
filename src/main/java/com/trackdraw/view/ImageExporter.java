@@ -358,8 +358,8 @@ public class ImageExporter {
             ShapeReportGenerator.ComplexShape complex = entry.getKey();
             int count = entry.getValue();
             
-            // Format complex shape as "key1+key2" for display
-            String complexKey = complex.getShapeKey1() + "+" + complex.getShapeKey2();
+            // Format complex shape with orientation signs: "key1+key2" or "key1-key2"
+            String complexKey = complex.getDisplayKey();
             
             if (complex.isRed()) {
                 redCounts.put(complexKey, redCounts.getOrDefault(complexKey, 0) + count);
@@ -381,10 +381,10 @@ public class ImageExporter {
         int lineHeight = 15 * scale;
         int currentY = y;
         
-        // Calculate column widths
+        // Calculate column widths (wider to accommodate missing count format)
         int keyColWidth = 80 * scale; // Wider for complex shapes
-        int redColWidth = 40 * scale;
-        int whiteColWidth = 40 * scale;
+        int redColWidth = 60 * scale; // Wider for "count (missing)" format
+        int whiteColWidth = 60 * scale; // Wider for "count (missing)" format
         
         // Title
         g2d.drawString("Shapes Report:", x, currentY);
@@ -413,12 +413,16 @@ public class ImageExporter {
                 continue;
             }
             
+            // Format counts with missing information
+            String redCountStr = report.formatCountWithMissing(key, true, redCount);
+            String whiteCountStr = report.formatCountWithMissing(key, false, whiteCount);
+            
             int rowX = x;
             g2d.drawString(key, rowX, currentY);
             rowX += keyColWidth;
-            g2d.drawString(String.valueOf(redCount), rowX, currentY);
+            g2d.drawString(redCountStr, rowX, currentY);
             rowX += redColWidth;
-            g2d.drawString(String.valueOf(whiteCount), rowX, currentY);
+            g2d.drawString(whiteCountStr, rowX, currentY);
             currentY += lineHeight;
         }
         
