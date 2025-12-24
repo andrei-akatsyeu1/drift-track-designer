@@ -586,7 +586,7 @@
     },
     {
       "name": "Sequence 5",
-      "active": true,
+      "active": false,
       "invertAlignment": true,
       "shapes": [
         {
@@ -1021,7 +1021,63 @@
       "invertAlignment": false,
       "shapes": [
         {
-          "id": "d2d79e64-c4d9-4f99-8838-c80477900773",
+          "id": "d3028556-35f6-435e-8731-5f6a39824e87",
+          "type": "rectangle",
+          "key": "L",
+          "externalDiameter": 0.0,
+          "angleDegrees": 0.0,
+          "width": 6.0,
+          "length": 19.0,
+          "diameter": 0.0,
+          "orientation": 1,
+          "active": true,
+          "isRed": true,
+          "forceInvertColor": false
+        },
+        {
+          "id": "536c9e82-e2a7-4406-a9b8-390c988c9b9c",
+          "type": "rectangle",
+          "key": "L",
+          "externalDiameter": 0.0,
+          "angleDegrees": 0.0,
+          "width": 6.0,
+          "length": 19.0,
+          "diameter": 0.0,
+          "orientation": 1,
+          "active": false,
+          "isRed": false,
+          "forceInvertColor": false
+        },
+        {
+          "id": "97d6e9a9-7fb1-4c2b-8330-0152c7482a8b",
+          "type": "annular_sector",
+          "key": "025",
+          "externalDiameter": 25.0,
+          "angleDegrees": 90.0,
+          "width": 6.0,
+          "length": 0.0,
+          "diameter": 0.0,
+          "orientation": 1,
+          "active": false,
+          "isRed": true,
+          "forceInvertColor": false
+        },
+        {
+          "id": "20ae693f-11d2-4f20-b06c-30534d75cc28",
+          "type": "annular_sector",
+          "key": "025",
+          "externalDiameter": 25.0,
+          "angleDegrees": 90.0,
+          "width": 6.0,
+          "length": 0.0,
+          "diameter": 0.0,
+          "orientation": 1,
+          "active": false,
+          "isRed": false,
+          "forceInvertColor": false
+        },
+        {
+          "id": "49533875-6011-4663-bcc5-e76a9c3c2bbb",
           "type": "annular_sector",
           "key": "30",
           "externalDiameter": 300.0,
@@ -1035,7 +1091,7 @@
           "forceInvertColor": false
         },
         {
-          "id": "537fb280-d549-4e25-b618-011ac866ac78",
+          "id": "d73514dc-19ea-42ce-bb3b-ac9ae5e63204",
           "type": "annular_sector",
           "key": "30",
           "externalDiameter": 300.0,
@@ -1049,7 +1105,7 @@
           "forceInvertColor": false
         },
         {
-          "id": "49533875-6011-4663-bcc5-e76a9c3c2bbb",
+          "id": "c5308128-9b28-4ff4-9c51-1f68f120b228",
           "type": "annular_sector",
           "key": "30",
           "externalDiameter": 300.0,
@@ -1091,11 +1147,11 @@
           "forceInvertColor": false
         },
         {
-          "id": "3ff1545c-1575-4bdf-9d36-2e132fc4098d",
+          "id": "7ced00e7-140f-4207-843e-9700fc1f6459",
           "type": "annular_sector",
-          "key": "20",
-          "externalDiameter": 200.0,
-          "angleDegrees": 11.25,
+          "key": "25",
+          "externalDiameter": 250.0,
+          "angleDegrees": 9.0,
           "width": 6.0,
           "length": 0.0,
           "diameter": 0.0,
@@ -1105,11 +1161,11 @@
           "forceInvertColor": false
         },
         {
-          "id": "bec4f16f-b753-4d65-abc5-00848afa5ffc",
+          "id": "e33f867a-0653-4b34-9f8a-cb22d2395ef7",
           "type": "annular_sector",
-          "key": "20",
-          "externalDiameter": 200.0,
-          "angleDegrees": 11.25,
+          "key": "25",
+          "externalDiameter": 250.0,
+          "angleDegrees": 9.0,
           "width": 6.0,
           "length": 0.0,
           "diameter": 0.0,
@@ -2416,7 +2472,7 @@
           "length": 7.0,
           "diameter": 0.0,
           "orientation": 1,
-          "active": true,
+          "active": false,
           "isRed": false,
           "forceInvertColor": false
         }
@@ -2424,35 +2480,10 @@
       "initialAlignment": {
         "type": "position",
         "position": {
-          "x": 544.3548387096778,
-          "y": 245.48387096774192,
-          "angle": 76.0
+          "x": 503.5548387096778,
+          "y": 247.48387096774195,
+          "angle": 261.0
         }
-      }
-    },
-    {
-      "name": "Sequence 7",
-      "active": false,
-      "invertAlignment": true,
-      "shapes": [
-        {
-          "id": "3958b1d0-a757-4d9c-bc70-4bd246566efe",
-          "type": "half_circle",
-          "key": "E",
-          "externalDiameter": 0.0,
-          "angleDegrees": 0.0,
-          "width": 0.0,
-          "length": 0.0,
-          "diameter": 6.0,
-          "orientation": 1,
-          "active": true,
-          "isRed": false,
-          "forceInvertColor": false
-        }
-      ],
-      "initialAlignment": {
-        "type": "shape",
-        "shapeId": "d2d79e64-c4d9-4f99-8838-c80477900773"
       }
     },
     {
@@ -2604,6 +2635,31 @@
       "initialAlignment": {
         "type": "shape",
         "shapeId": "f12c47b7-c8ee-4d73-a6e4-811177c54d49"
+      }
+    },
+    {
+      "name": "Sequence 9",
+      "active": true,
+      "invertAlignment": true,
+      "shapes": [
+        {
+          "id": "04978dd9-c86a-4e07-a4b0-fd7fe6012cce",
+          "type": "half_circle",
+          "key": "E",
+          "externalDiameter": 0.0,
+          "angleDegrees": 0.0,
+          "width": 0.0,
+          "length": 0.0,
+          "diameter": 6.0,
+          "orientation": 1,
+          "active": true,
+          "isRed": false,
+          "forceInvertColor": false
+        }
+      ],
+      "initialAlignment": {
+        "type": "shape",
+        "shapeId": "d3028556-35f6-435e-8731-5f6a39824e87"
       }
     }
   ],
