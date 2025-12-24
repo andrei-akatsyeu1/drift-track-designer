@@ -147,6 +147,7 @@ When you first launch Track Draw, you'll see:
 ### Available Shapes
 
 **Annular Sectors** (arc shapes):
+- `025`: 25mm diameter, 90° angle
 - `05`: 50mm diameter, 45° angle
 - `10`: 100mm diameter, 22.5° angle
 - `15`: 150mm diameter, 15° angle
@@ -189,7 +190,13 @@ Shapes alternate between white/black and red:
 
 - **Remove last shape**: Click the `-` button in the shape palette
 - **Remove selected shape**: Select a shape in the list, then click `-`
+- **Remove active shape**: Press `Delete` or `Backspace` key (removes the currently active shape)
 - **Clear all shapes**: Click the `🗑` button below the shape list
+
+**Note**: When you remove a shape, the application automatically activates the next appropriate shape:
+- If you remove a middle shape, the previous shape becomes active
+- If you remove the first shape, the new first shape becomes active
+- This ensures you always have a shape selected for continued editing
 
 ### Inverting Shape Color
 
@@ -291,6 +298,12 @@ When you create a sequence from a shape:
 | `Ctrl + Page Up` | Increase image scale by 1% |
 | `Ctrl + Page Down` | Decrease image scale by 1% |
 
+### Shape Removal
+
+| Shortcut | Action |
+|----------|--------|
+| `Delete` or `Backspace` | Remove active shape |
+
 ### Measurement Tool
 
 | Shortcut | Action |
@@ -359,6 +372,10 @@ When you create a sequence from a shape:
    - **Scale**: Export scale multiplier (1x to 10x)
 3. Click OK
 4. Choose a location and filename for the PNG file
+   - **Default filename**: The export dialog automatically suggests a filename based on:
+     - The loaded JSON file name (if a file was loaded)
+     - The active sequence name (if no file was loaded)
+     - "export" (if neither is available)
 5. Click Save
 
 **Export Features**:
@@ -401,9 +418,17 @@ Generate a report of all shapes used in your sequences:
 
 1. Go to **Report → Generate Shape Report**
 2. A window displays:
-   - Count of each shape type
-   - Complex shapes (linked shape pairs)
+   - Count of each shape type (by color: white/black and red)
+   - Complex shapes (linked shape pairs) with normalized orientation notation
    - Color distribution
+   - **Sequence dimensions**: Width and length of the entire track layout
+   - Summary statistics (total complex shapes, regular shapes, etc.)
+
+**Report Features**:
+- Reports use **effective color** counting, accounting for color inversion settings
+- Complex shapes are normalized alphabetically with orientation signs (e.g., `+10+15`, `-10+15`)
+- Dimensions are calculated at scale 1.0 for accurate measurements
+- Shape counts can include missing count information when shape library is configured
 
 ### File Structure
 
@@ -463,5 +488,20 @@ For issues or questions, check the application's status bar for error messages a
 
 ---
 
-**Version**: 1.0  
+**Version**: 1.1  
 **Last Updated**: December 2024
+
+## Recent Updates
+
+### Latest Features (v1.1)
+
+- **New Shape Added**: Shape `025` (25mm diameter, 90° angle) - a new annular sector option
+- **Improved Shape Removal**: 
+  - Delete/Backspace key support for removing active shapes
+  - Automatic next shape activation after removal for smoother workflow
+- **Enhanced Reports**: 
+  - Sequence dimensions (width and length) now included in reports
+  - Effective color counting accounts for color inversion settings
+- **Export Improvements**: 
+  - Default filename automatically uses loaded JSON file name or active sequence name
+  - More intuitive export workflow
