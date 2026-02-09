@@ -17,7 +17,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 REM Set JAR file path (standard Maven output location)
-set JAR_FILE=target\track-draw-1.0-SNAPSHOT.jar
+set JAR_FILE=target\track-draw-1.0-SNAPSHOT-jar-with-dependencies.jar
 
 REM Check if JAR file exists
 if not exist "%JAR_FILE%" (

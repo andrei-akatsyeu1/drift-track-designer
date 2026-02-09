@@ -2,7 +2,7 @@
   "sequences": [
     {
       "name": "Main",
-      "active": false,
+      "active": true,
       "invertAlignment": false,
       "shapes": [
         {
@@ -15,7 +15,7 @@
           "length": 0.0,
           "diameter": 0.0,
           "orientation": -1,
-          "active": true,
+          "active": false,
           "isRed": true,
           "forceInvertColor": false
         },
@@ -62,16 +62,16 @@
           "forceInvertColor": false
         },
         {
-          "id": "ac683b24-218d-4f3f-a1ba-13f76b164533",
+          "id": "8a1e8a38-eda2-461c-971d-55d096d470a9",
           "type": "rectangle",
-          "key": "L7",
+          "key": "L5",
           "externalDiameter": 0.0,
           "angleDegrees": 0.0,
           "width": 6.0,
-          "length": 7.0,
+          "length": 5.0,
           "diameter": 0.0,
           "orientation": 1,
-          "active": false,
+          "active": true,
           "isRed": true,
           "forceInvertColor": false
         }
@@ -128,16 +128,16 @@
           "length": 0.0,
           "diameter": 0.0,
           "orientation": 1,
-          "active": false,
+          "active": true,
           "isRed": true,
           "forceInvertColor": false
         },
         {
-          "id": "0a5aa93a-f5ef-429c-aef3-f007ca1e8d6d",
+          "id": "e7469798-979a-4fbb-9910-6918fc0ab290",
           "type": "annular_sector",
-          "key": "15",
-          "externalDiameter": 150.0,
-          "angleDegrees": 15.0,
+          "key": "20",
+          "externalDiameter": 200.0,
+          "angleDegrees": 11.25,
           "width": 6.0,
           "length": 0.0,
           "diameter": 0.0,
@@ -282,7 +282,7 @@
           "length": 0.0,
           "diameter": 0.0,
           "orientation": -1,
-          "active": true,
+          "active": false,
           "isRed": false,
           "forceInvertColor": false
         }
@@ -1158,7 +1158,7 @@
     },
     {
       "name": "Sequence 7",
-      "active": true,
+      "active": false,
       "invertAlignment": false,
       "shapes": [
         {
